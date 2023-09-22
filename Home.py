@@ -3,6 +3,11 @@ from streamlit_authenticator import Authenticate
 import yaml
 from yaml.loader import SafeLoader
 
+st.set_page_config(
+    page_title="Home",
+    page_icon="🏠",
+)
+
 def main_page():
     st.title("Morning Routine Planner")
 
