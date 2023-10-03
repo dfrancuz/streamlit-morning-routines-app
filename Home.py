@@ -3,6 +3,7 @@ import firebase_admin
 from firebase_admin import credentials, auth, db
 import pyrebase
 import os
+import pandas as pd
 
 st.set_page_config(
     page_title="Home",
@@ -32,14 +33,74 @@ auth_pyrebase = firebase.auth()
 left_column, middle_left, middle_right ,right_column = st.columns(4)
 
 def main_page():
+    if "user_id" in st.session_state:
+        user_id = st.session_state["user_id"]
+    
+    if 'df' not in st.session_state:
+        data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': []}
+        st.session_state.df = pd.DataFrame(data)
+
     st.title("Morning Routine Planner")
     with right_column:
         st.write(f"Welcome {st.session_state['name']}!")
     with left_column:
         if st.button("Log Out"):
             for key in list(st.session_state.keys()):
-                st.session_state[key] = None
+                if key == 'df':
+                    st.session_state[key] = pd.DataFrame()
+                else:
+                    st.session_state[key] = None
             st.experimental_rerun()
+
+    ref = db.reference(f'users/{user_id}/tasks')
+    tasks = ref.get()
+
+    if tasks is None:
+        data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': []}
+        st.session_state.df = pd.DataFrame(data)
+    else:
+        task_list = [task for task in tasks.values()]
+        st.session_state.df = pd.DataFrame(task_list)
+        st.session_state.df.columns = ['Description', 'Estimated Time (min)', 'Status', 'Task']
+
+    with st.form(key='task_form'):
+        task = st.text_input('Enter Task')
+        description = st.text_input("Enter Description")
+        time = st.number_input("Estimated Time (min)", min_value=1)
+        submit_button = st.form_submit_button(label='Add Task')
+
+    if submit_button:
+        if task != '' and time > 0:
+            new_task = {
+                'task': task,
+                'description': description,
+                'estimated_time': time,
+                'status': 'Not Started'
+            }
+            ref.push(new_task)
+            new_task = pd.DataFrame({'Task': [task], 'Description': [description], 'Estimated Time (min)': [time], 'Status': ['Not Started']})
+            st.session_state.df = pd.concat([st.session_state.df, new_task], ignore_index=True)
+            st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
+            st.success(f"Task '{task}' added to your morning routine and realtime database!")
+    
+    st.subheader("Your Morning Routine:")
+    if st.session_state.df.empty:
+        st.info("No tasks added yet.")
+    else:
+        for i in range(len(st.session_state.df)):
+            status = st.session_state.get(f'status_{i}', 'Not Started')
+            if status == 'Completed':
+                status_indicator = '✅'
+            elif status == 'In Progress':
+                status_indicator = '🔄'
+            else:
+                status_indicator = '❌'
+            
+            with st.expander(f"{status_indicator} {st.session_state.df.loc[i, 'Task']} {st.session_state.df.loc[i, 'Estimated Time (min)']} minutes"):
+                st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
+                status = st.selectbox('', ['Not Started', 'In Progress', 'Completed'], key=f'status_{i}')
+                if status != st.session_state.df.loc[i, 'Status']:
+                    st.session_state.df.loc[i, 'Status'] = status
 
 def sign_in():
     with st.form(key='auth_form'):
@@ -61,6 +122,7 @@ def sign_in():
                     if data is not None:
                         st.session_state["authentication_status"] = True
                         st.session_state["name"] = data['name']
+                        st.session_state["user_id"] = user["localId"]
                         st.session_state["rerun"] = True
                 except:
                     try:
