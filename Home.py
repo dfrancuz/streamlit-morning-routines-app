@@ -56,12 +56,11 @@ def main_page():
     tasks = ref.get()
 
     if tasks is None:
-        data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': []}
+        data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': [], 'Key': []}
         st.session_state.df = pd.DataFrame(data)
     else:
-        task_list = [task for task in tasks.values()]
+        task_list = [{'Task': task['task'], 'Description': task['description'], 'Estimated Time (min)': task['estimated_time'], 'Status': task['status'], 'Key': key} for key, task in tasks.items()]
         st.session_state.df = pd.DataFrame(task_list)
-        st.session_state.df.columns = ['Description', 'Estimated Time (min)', 'Status', 'Task']
 
     with st.form(key='task_form'):
         task = st.text_input('Enter Task')
@@ -88,19 +87,23 @@ def main_page():
         st.info("No tasks added yet.")
     else:
         for i in range(len(st.session_state.df)):
-            status = st.session_state.get(f'status_{i}', 'Not Started')
-            if status == 'Completed':
-                status_indicator = '✅'
-            elif status == 'In Progress':
-                status_indicator = '🔄'
-            else:
-                status_indicator = '❌'
-            
-            with st.expander(f"{status_indicator} {st.session_state.df.loc[i, 'Task']} {st.session_state.df.loc[i, 'Estimated Time (min)']} minutes"):
-                st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
-                status = st.selectbox('', ['Not Started', 'In Progress', 'Completed'], key=f'status_{i}')
-                if status != st.session_state.df.loc[i, 'Status']:
-                    st.session_state.df.loc[i, 'Status'] = status
+            if pd.notna(st.session_state.df.loc[i, 'Task']):
+                status = st.session_state.df.loc[i, 'Status']
+                if status == 'Completed':
+                    status_indicator = '✅'
+                elif status == 'In Progress':
+                    status_indicator = '🔄'
+                else:
+                    status_indicator = '❌'
+                
+                with st.expander(f"{status_indicator} {st.session_state.df.loc[i, 'Task']} {st.session_state.df.loc[i, 'Estimated Time (min)']} minutes"):
+                    st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
+                    new_status = st.selectbox('', ['Not Started', 'In Progress', 'Completed'], key=f'status_{i}', index=['Not Started', 'In Progress', 'Completed'].index(status))
+                    if new_status != status:
+                        task_key = st.session_state.df.loc[i, 'Key']
+                        ref.child(task_key).update({'status': new_status})
+                        st.session_state.df.loc[i, 'Status'] = new_status
+                        st.experimental_rerun()
 
 def sign_in():
     with st.form(key='auth_form'):
