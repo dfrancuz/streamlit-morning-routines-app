@@ -9,23 +9,26 @@ import spacy
 import time
 import re
 
-nlp = spacy.load("en_core_web_lg")
+nlp = spacy.load("en_core_web_sm")
 
-def transcribe_speech(prompt):
+def transcribe_speech(prompt=None):
     r = sr.Recognizer()
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source)
-        st.write(prompt, timeout=2)
-        #time.sleep(2)
+        if prompt:
+            st.write(prompt)
         audio = r.listen(source)
     try:
         text = r.recognize_google(audio)
-        st.write(text)
+        #st.write(text)
         return text
     except sr.UnknownValueError:
-        return "Could not understand audio"
+        st.error("Could not understand audio")
+        return None
     except sr.RequestError as e:
-        return f"Could not request results from Google Speech Recognition service; {e}"
+        st.error(f"Could not request results from Google Speech Recognition service; {e}")
+        return None
+
 
 st.set_page_config(
     page_title="Home",
@@ -104,32 +107,49 @@ def main_page():
             st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
             st.success(f"Task '{task}' added to your morning routine and realtime database!")
     
-    if st.button("Automate"):
-        task_name = transcribe_speech("What is your task name?")
-        if task_name:
-            task_duration = transcribe_speech("How long will it take?")
-            match = re.search(r'\d+', task_duration)
-            if match:
-                task_duration = match.group()
+    questions = ["What is your task name?", "How long will it take?", "Can you describe the task?"]
+
+    automate_button_pressed = st.button("Automate")
+
+    if automate_button_pressed:
+        icons = ['🔄', '🔄', '🔄']
+        responses = []
+        for i, question in enumerate(questions):
+            response_status = st.empty()
+            with response_status:
+                st.markdown(f"**{question}** {icons[i]}")
+            response = transcribe_speech()
+
+            if response:
+                icons[i] = '✅'
+                if i == 1:
+                    match = re.search(r'\d+', response)
+                    if match:
+                        task_duration = int(match.group())
+                    else:
+                        task_duration = None
+                else:
+                    responses.append(response)
             else:
-                task_duration = ''
-            if task_duration:
-                task_description = transcribe_speech("Can you describe the task?")
-            
+                icons[i] = '❌'
+
+            response_status.markdown(f"**{question}** {icons[i]}")
+
+        if task_duration is not None:
+            task_name, task_description = responses
             new_task = {
-                        'task': task_name,
-                        'description': task_description,
-                        'estimated_time': task_duration,
-                        'status': 'Not Started'
-                    }
+                'task': task_name,
+                'description': task_description,
+                'estimated_time': task_duration,
+                'status': 'Not Started'
+            }
             ref.push(new_task)
             new_task = pd.DataFrame({'Task': [task_name], 'Description': [task_description], 'Estimated Time (min)': [task_duration], 'Status': ['Not Started']})
             st.session_state.df = pd.concat([st.session_state.df, new_task], ignore_index=True)
             st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
             st.success(f"Task '{task_name}' added to your morning routine and realtime database!")
-            st.experimental_rerun()
-
-
+        else:
+            st.error("Could not understand one or more of your responses. Please try again.")
 
     st.subheader("Your Morning Routine:")
     if st.session_state.df.empty:
