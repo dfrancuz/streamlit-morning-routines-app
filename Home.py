@@ -4,6 +4,28 @@ from firebase_admin import credentials, auth, db
 import pyrebase
 import os
 import pandas as pd
+import speech_recognition as sr
+import spacy
+import time
+import re
+
+nlp = spacy.load("en_core_web_lg")
+
+def transcribe_speech(prompt):
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        r.adjust_for_ambient_noise(source)
+        st.write(prompt, timeout=2)
+        #time.sleep(2)
+        audio = r.listen(source)
+    try:
+        text = r.recognize_google(audio)
+        st.write(text)
+        return text
+    except sr.UnknownValueError:
+        return "Could not understand audio"
+    except sr.RequestError as e:
+        return f"Could not request results from Google Speech Recognition service; {e}"
 
 st.set_page_config(
     page_title="Home",
@@ -65,23 +87,50 @@ def main_page():
     with st.form(key='task_form'):
         task = st.text_input('Enter Task')
         description = st.text_input("Enter Description")
-        time = st.number_input("Estimated Time (min)", min_value=1)
+        duration = st.number_input("Estimated Time (min)", min_value=1)
         submit_button = st.form_submit_button(label='Add Task')
 
     if submit_button:
-        if task != '' and time > 0:
+        if task != '' and duration > 0:
             new_task = {
                 'task': task,
                 'description': description,
-                'estimated_time': time,
+                'estimated_time': duration,
                 'status': 'Not Started'
             }
             ref.push(new_task)
-            new_task = pd.DataFrame({'Task': [task], 'Description': [description], 'Estimated Time (min)': [time], 'Status': ['Not Started']})
+            new_task = pd.DataFrame({'Task': [task], 'Description': [description], 'Estimated Time (min)': [duration], 'Status': ['Not Started']})
             st.session_state.df = pd.concat([st.session_state.df, new_task], ignore_index=True)
             st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
             st.success(f"Task '{task}' added to your morning routine and realtime database!")
     
+    if st.button("Automate"):
+        task_name = transcribe_speech("What is your task name?")
+        if task_name:
+            task_duration = transcribe_speech("How long will it take?")
+            match = re.search(r'\d+', task_duration)
+            if match:
+                task_duration = match.group()
+            else:
+                task_duration = ''
+            if task_duration:
+                task_description = transcribe_speech("Can you describe the task?")
+            
+            new_task = {
+                        'task': task_name,
+                        'description': task_description,
+                        'estimated_time': task_duration,
+                        'status': 'Not Started'
+                    }
+            ref.push(new_task)
+            new_task = pd.DataFrame({'Task': [task_name], 'Description': [task_description], 'Estimated Time (min)': [task_duration], 'Status': ['Not Started']})
+            st.session_state.df = pd.concat([st.session_state.df, new_task], ignore_index=True)
+            st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
+            st.success(f"Task '{task_name}' added to your morning routine and realtime database!")
+            st.experimental_rerun()
+
+
+
     st.subheader("Your Morning Routine:")
     if st.session_state.df.empty:
         st.info("No tasks added yet.")
