@@ -65,19 +65,19 @@ def main_page():
     with st.form(key='task_form'):
         task = st.text_input('Enter Task')
         description = st.text_input("Enter Description")
-        time = st.number_input("Estimated Time (min)", min_value=1)
+        duration = st.number_input("Estimated Time (min)", min_value=1)
         submit_button = st.form_submit_button(label='Add Task')
 
     if submit_button:
-        if task != '' and time > 0:
+        if task != '' and duration > 0:
             new_task = {
                 'task': task,
                 'description': description,
-                'estimated_time': time,
+                'estimated_time': duration,
                 'status': 'Not Started'
             }
             ref.push(new_task)
-            new_task = pd.DataFrame({'Task': [task], 'Description': [description], 'Estimated Time (min)': [time], 'Status': ['Not Started']})
+            new_task = pd.DataFrame({'Task': [task], 'Description': [description], 'Estimated Time (min)': [duration], 'Status': ['Not Started']})
             st.session_state.df = pd.concat([st.session_state.df, new_task], ignore_index=True)
             st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
             st.success(f"Task '{task}' added to your morning routine and realtime database!")
