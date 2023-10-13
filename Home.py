@@ -104,6 +104,14 @@ def main_page():
                         ref.child(task_key).update({'status': new_status})
                         st.session_state.df.loc[i, 'Status'] = new_status
                         st.experimental_rerun()
+                    
+                    remove_button = st.button("Remove Task", key=f"remove_task_{i}")
+                    
+                    if remove_button:
+                        task_key = st.session_state.df.loc[i, 'Key']
+                        ref.child(task_key).delete()
+                        st.session_state.df.drop(index=i, inplace=True)
+                        st.experimental_rerun()
 
 def sign_in():
     with st.form(key='auth_form'):
