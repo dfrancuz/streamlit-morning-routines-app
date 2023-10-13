@@ -8,27 +8,41 @@ import speech_recognition as sr
 import spacy
 import time
 import re
+import pyttsx3
 
 nlp = spacy.load("en_core_web_sm")
 
 def transcribe_speech(prompt=None):
     r = sr.Recognizer()
+    is_recording = False
+
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source)
         if prompt:
             st.write(prompt)
-        audio = r.listen(source)
+
+        audio = None
+        while True:
+            try:
+                with st.spinner("Listening..."):
+                    audio = r.listen(source, timeout=4)
+                    #st.success("🛑 Recording stopped")
+                break
+            except sr.WaitTimeoutError:
+                if not is_recording:
+                    is_recording = True
     try:
         text = r.recognize_google(audio)
-        #st.write(text)
         return text
     except sr.UnknownValueError:
         st.error("Could not understand audio")
-        return None
     except sr.RequestError as e:
         st.error(f"Could not request results from Google Speech Recognition service; {e}")
-        return None
 
+def speak(text):
+    engine = pyttsx3.init()
+    engine.say(text)
+    engine.runAndWait()
 
 st.set_page_config(
     page_title="Home",
@@ -114,10 +128,14 @@ def main_page():
     if automate_button_pressed:
         icons = ['🔄', '🔄', '🔄']
         responses = []
+        task_duration = None
+        
         for i, question in enumerate(questions):
             response_status = st.empty()
             with response_status:
                 st.markdown(f"**{question}** {icons[i]}")
+            
+            speak(question)
             response = transcribe_speech()
 
             if response:
@@ -130,8 +148,10 @@ def main_page():
                         task_duration = None
                 else:
                     responses.append(response)
+                    #st.success("Response captured: " + response)
             else:
                 icons[i] = '❌'
+                st.warning("Could not understand the response. Please try again.")
 
             response_status.markdown(f"**{question}** {icons[i]}")
 
@@ -150,7 +170,7 @@ def main_page():
             st.success(f"Task '{task_name}' added to your morning routine and realtime database!")
         else:
             st.error("Could not understand one or more of your responses. Please try again.")
-
+        
     st.subheader("Your Morning Routine:")
     if st.session_state.df.empty:
         st.info("No tasks added yet.")
