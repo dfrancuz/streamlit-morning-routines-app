@@ -45,7 +45,7 @@ def get_forecast(city: str):
 
 def show_forecast():
     
-    st.sidebar.title("Current weather")
+    st.sidebar.title("Current Weather")
 
     city = "Budapest"
     weather_data = get_forecast(city)
@@ -58,6 +58,30 @@ def show_forecast():
     temp_row[1].markdown(f"💨 {weather_data['wind']['speed']} m/s")
 
 show_forecast()
+
+
+@st.cache_data
+def get_exchange_rate(base_currency, target_currency):
+    api_key = os.environ.get("CURRENCY_API_KEY")
+    base_url = os.environ.get("CURRENCY_BASE_URL")
+    complete_url = f'{base_url}/latest?apikey={api_key}&base_currency={base_currency}'
+    response = requests.get(complete_url)
+    data = response.json()
+    
+    if response.status_code == 200:
+        if 'data' in data and target_currency in data['data']:
+            exchange_rate = data['data'][target_currency]['value']
+            #st.session_state.exchange_rate_fetched = True
+            return exchange_rate
+        else:
+            st.sidebar.write('Error: The response does not contain exchange rates.')
+            return None
+    else:
+        if 'error' in data:
+            st.sidebar.write('Error: ', data['error'])
+        else:
+            st.sidebar.write('Error: The response does not contain an error message.')
+        return None
 
 
 left_column, middle_left, middle_right ,right_column = st.columns(4)
@@ -75,11 +99,11 @@ def main_page():
         st.write(f"Welcome {st.session_state['name']}!")
     with left_column:
         if st.button("Log Out"):
-            for key in list(st.session_state.keys()):
-                if key == 'df':
-                    st.session_state[key] = pd.DataFrame()
-                else:
-                    st.session_state[key] = None
+            st.session_state.clear()
+            st.session_state.update({
+                'df': pd.DataFrame(),
+                'exchange_rates': {},
+            })
             st.experimental_rerun()
 
     ref = db.reference(f'users/{user_id}/tasks')
@@ -197,3 +221,32 @@ else:
 if "rerun" in st.session_state and st.session_state["rerun"]:
     st.session_state["rerun"] = False
     st.experimental_rerun()
+
+
+base_currencies = ['EUR', 'USD', 'CHF']
+target_currency = 'HUF'
+
+if "exchange_rates" not in st.session_state:
+    st.session_state.exchange_rates = {}
+
+button_placeholder = st.sidebar.empty()
+
+if not all(base_currency in st.session_state.exchange_rates for base_currency in base_currencies):
+    button = button_placeholder.button("Check Currency Exchange")
+
+    if button:
+        button_placeholder.empty()
+
+        with st.sidebar.expander("Exchange Rates"):
+            for base_currency in base_currencies:
+                rate = get_exchange_rate(base_currency, target_currency)
+                if rate is not None:
+                    formatted_rate = format(rate, '.2f')
+                    st.session_state.exchange_rates[base_currency] = rate
+                    st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
+else:
+    with st.sidebar.expander("Exchange Rates"):
+        for base_currency in base_currencies:
+            rate = st.session_state.exchange_rates[base_currency]
+            formatted_rate = format(rate, '.2f')
+            st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
