@@ -4,6 +4,7 @@ from firebase_admin import credentials, auth, db
 import pyrebase
 import os
 import pandas as pd
+import requests
 
 st.set_page_config(
     page_title="Home",
@@ -29,6 +30,35 @@ firebaseConfig = {
 
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth_pyrebase = firebase.auth()
+
+
+def get_forecast(city: str):
+    api_key = os.environ.get("WEATHER_API_KEY")
+    base_url = os.environ.get("WEATHER_BASE_URL")
+    params = {
+        "q": city,
+        "appid": api_key,
+        "units": "metric"
+    }
+    response = requests.get(base_url, params=params)
+    return response.json()
+
+def show_forecast():
+    
+    st.sidebar.title("Current weather")
+
+    city = "Budapest"
+    weather_data = get_forecast(city)
+    
+    temp_row = st.sidebar.columns([1, 1])
+    temp_row[0].markdown(f"**{city}**")
+    temp_row[1].markdown(f"🌡️ **{weather_data['main']['temp']}°C**")
+
+    temp_row[0].markdown(f"💧 {weather_data['main']['humidity']}%")
+    temp_row[1].markdown(f"💨 {weather_data['wind']['speed']} m/s")
+
+show_forecast()
+
 
 left_column, middle_left, middle_right ,right_column = st.columns(4)
 
