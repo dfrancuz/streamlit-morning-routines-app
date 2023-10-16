@@ -167,6 +167,10 @@ def main_page():
                         st.session_state.df.drop(index=i, inplace=True)
                         st.experimental_rerun()
 
+        st.session_state.df['Estimated Time (min)'] = pd.to_numeric(st.session_state.df['Estimated Time (min)'], errors='coerce')
+        total_time = st.session_state.df['Estimated Time (min)'].sum()
+        st.write(f"Total Estimated Time: {str(total_time)} minutes")
+
 def sign_in():
     with st.form(key='auth_form'):
         col1, col2 = st.columns(2)
