@@ -136,36 +136,29 @@ def main_page():
             st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
             st.success(f"Task '{task}' added to your morning routine and realtime database!")
     
-    st.subheader("Your Morning Routine:")
+    st.header("Your Morning Routine")
     if st.session_state.df.empty:
         st.info("No tasks added yet.")
     else:
-        for i in range(len(st.session_state.df)):
-            if pd.notna(st.session_state.df.loc[i, 'Task']):
-                status = st.session_state.df.loc[i, 'Status']
-                if status == 'Completed':
-                    status_indicator = '✅'
-                elif status == 'In Progress':
-                    status_indicator = '🔄'
-                else:
-                    status_indicator = '❌'
-                
-                with st.expander(f"{status_indicator} {st.session_state.df.loc[i, 'Task']} {st.session_state.df.loc[i, 'Estimated Time (min)']} minutes"):
-                    st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
-                    new_status = st.selectbox('', ['Not Started', 'In Progress', 'Completed'], key=f'status_{i}', index=['Not Started', 'In Progress', 'Completed'].index(status))
-                    if new_status != status:
-                        task_key = st.session_state.df.loc[i, 'Key']
-                        ref.child(task_key).update({'status': new_status})
-                        st.session_state.df.loc[i, 'Status'] = new_status
-                        st.experimental_rerun()
-                    
-                    remove_button = st.button("Remove Task", key=f"remove_task_{i}")
-                    
-                    if remove_button:
-                        task_key = st.session_state.df.loc[i, 'Key']
-                        ref.child(task_key).delete()
-                        st.session_state.df.drop(index=i, inplace=True)
-                        st.experimental_rerun()
+        for status, status_indicator in [('Completed', '✅'), ('In Progress', '🔄'), ('Not Started', '❌')]:
+            st.subheader(f"{status} Tasks:")
+            for i in range(len(st.session_state.df)):
+                if pd.notna(st.session_state.df.loc[i, 'Task']) and st.session_state.df.loc[i, 'Status'] == status:
+                    with st.expander(f"{status_indicator} {st.session_state.df.loc[i, 'Task']} {st.session_state.df.loc[i, 'Estimated Time (min)']} minutes"):
+                        st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
+                        new_status = st.selectbox('', ['Not Started', 'In Progress', 'Completed'], key=f'status_{i}', index=['Not Started', 'In Progress', 'Completed'].index(status))
+                        if new_status != status:
+                            task_key = st.session_state.df.loc[i, 'Key']
+                            ref.child(task_key).update({'status': new_status})
+                            st.session_state.df.loc[i, 'Status'] = new_status
+                            st.experimental_rerun()
+
+                        remove_button = st.button("Remove Task", key=f"remove_task_{i}")
+                        if remove_button:
+                            task_key = st.session_state.df.loc[i, 'Key']
+                            ref.child(task_key).delete()
+                            st.session_state.df.drop(index=i, inplace=True)
+                            st.experimental_rerun()
 
         st.session_state.df['Estimated Time (min)'] = pd.to_numeric(st.session_state.df['Estimated Time (min)'], errors='coerce')
         total_time = st.session_state.df.loc[st.session_state.df['Status'] != 'Completed', 'Estimated Time (min)'].sum()
