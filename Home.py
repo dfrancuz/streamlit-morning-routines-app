@@ -168,8 +168,8 @@ def main_page():
                         st.experimental_rerun()
 
         st.session_state.df['Estimated Time (min)'] = pd.to_numeric(st.session_state.df['Estimated Time (min)'], errors='coerce')
-        total_time = st.session_state.df['Estimated Time (min)'].sum()
-        st.write(f"Total Estimated Time: {str(total_time)} minutes")
+        total_time = st.session_state.df.loc[st.session_state.df['Status'] != 'Completed', 'Estimated Time (min)'].sum()
+        st.write(f"Total Estimated Time for Incomplete Tasks: {str(total_time)} minutes")
 
 def sign_in():
     with st.form(key='auth_form'):
