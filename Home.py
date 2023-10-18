@@ -146,8 +146,10 @@ def main_page():
                 st.session_state[f"show_{status}"] = True
             show_status = st.checkbox(f"Show {status} Tasks", key=f"show_{status}", value=st.session_state[f"show_{status}"])
             if show_status:
+                tasks_exist = False
                 for i in range(len(st.session_state.df)):
                     if pd.notna(st.session_state.df.loc[i, 'Task']) and st.session_state.df.loc[i, 'Status'] == status:
+                        tasks_exist = True
                         with st.expander(f"{status_indicator} {st.session_state.df.loc[i, 'Task']} {st.session_state.df.loc[i, 'Estimated Time (min)']} minutes"):
                             st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
                             new_status = st.selectbox('', ['Not Started', 'In Progress', 'Completed'], key=f'status_{i}', index=['Not Started', 'In Progress', 'Completed'].index(status))
@@ -163,6 +165,8 @@ def main_page():
                                 ref.child(task_key).delete()
                                 st.session_state.df.drop(index=i, inplace=True)
                                 st.experimental_rerun()
+                if not tasks_exist:
+                    st.info("No active tasks in this section.")
 
         st.session_state.df['Estimated Time (min)'] = pd.to_numeric(st.session_state.df['Estimated Time (min)'], errors='coerce')
         total_time = st.session_state.df.loc[st.session_state.df['Status'] != 'Completed', 'Estimated Time (min)'].sum()
