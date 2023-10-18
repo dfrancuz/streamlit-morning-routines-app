@@ -144,13 +144,13 @@ def main_page():
             st.subheader(f"{status} Tasks:")
             if f"show_{status}" not in st.session_state:
                 st.session_state[f"show_{status}"] = True
-            show_status = st.checkbox(f"Show {status} Tasks", key=f"show_{status}", value=st.session_state[f"show_{status}"])
+            show_status = st.checkbox(f"Show {status} Tasks", key=f"show_{status}")
             if show_status:
                 tasks_exist = False
                 for i in range(len(st.session_state.df)):
                     if pd.notna(st.session_state.df.loc[i, 'Task']) and st.session_state.df.loc[i, 'Status'] == status:
                         tasks_exist = True
-                        with st.expander(f"{status_indicator} {st.session_state.df.loc[i, 'Task']} {st.session_state.df.loc[i, 'Estimated Time (min)']} minutes"):
+                        with st.expander(f"{status_indicator} {st.session_state.df.loc[i, 'Task']} {st.session_state.df.loc[i, 'Estimated Time (min)']} minute(s)"):
                             st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
                             new_status = st.selectbox('', ['Not Started', 'In Progress', 'Completed'], key=f'status_{i}', index=['Not Started', 'In Progress', 'Completed'].index(status))
                             if new_status != status:
@@ -170,7 +170,16 @@ def main_page():
 
         st.session_state.df['Estimated Time (min)'] = pd.to_numeric(st.session_state.df['Estimated Time (min)'], errors='coerce')
         total_time = st.session_state.df.loc[st.session_state.df['Status'] != 'Completed', 'Estimated Time (min)'].sum()
-        st.write(f"Total Estimated Time for Incomplete Tasks: {str(total_time)} minutes")
+
+        if total_time > 60:
+            hours = total_time // 60
+            minutes = total_time % 60
+            st.markdown(f"Estimated time for incomplete tasks: **{hours}h {minutes}min**")
+        else:
+            if(total_time == 1):
+                st.markdown(f"Estimated time for incomplete tasks: **{total_time} minute**")
+            else:
+                st.markdown(f"Estimated time for incomplete tasks: **{total_time} minutes**")
 
 def sign_in():
     with st.form(key='auth_form'):
