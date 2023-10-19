@@ -5,7 +5,7 @@ import pyrebase
 import os
 import pandas as pd
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 
 st.set_page_config(
     page_title="Home",
@@ -87,6 +87,53 @@ def get_exchange_rate(base_currency, target_currency):
 
 left_column, middle_left, middle_right ,right_column = st.columns(4)
 
+def list_tasks():
+    user_id = st.session_state["user_id"]
+
+    col3, col4 = st.columns([2,1])
+    
+    with col3:
+        if 'loggedin' in st.session_state and st.session_state['loggedin']:
+            if st.button('Back'):
+                st.session_state.view = 'main_page'
+                st.experimental_rerun()
+    with col4:
+        st.write(f"{st.session_state['name']}'s **Task History**")
+
+    col1, col2 = st.columns([0.35,2])
+    with col1:
+        selected_date = st.date_input('Select a date', value=datetime.today())
+    with col2:
+        st.write('')
+        st.write('')
+        show_tasks_button = st.button('Show tasks')
+
+    if show_tasks_button:
+        ref = db.reference(f'users/{user_id}/tasks/{selected_date.strftime("%Y-%m-%d")}')
+        tasks = ref.get()
+
+        if tasks is None:
+            st.info("No tasks for the selected date.")
+        else:
+            task_list = []
+            for key, task in tasks.items():
+                task_list.append({
+                    'Task': task['task'], 
+                    'Description': task['description'],
+                    'Time': task['estimated_time'],
+                    'Status': task['status']
+                })
+            df = pd.DataFrame(task_list)
+
+            status_icons = {
+                'Completed': '✅',
+                'In Progress': '🔄',
+                'Not Started': '❌'
+            }
+            df['Status'] = df['Status'].map(status_icons)
+
+            st.dataframe(df, use_container_width=True)
+
 def main_page():
     if "user_id" in st.session_state:
         user_id = st.session_state["user_id"]
@@ -104,6 +151,7 @@ def main_page():
             st.session_state.update({
                 'df': pd.DataFrame(),
                 'exchange_rates': {},
+                'loggedin': False,
             })
             st.experimental_rerun()
 
@@ -195,6 +243,16 @@ def main_page():
             else:
                 st.markdown(f"Estimated time for incomplete tasks: **{total_time} minutes**")
 
+        st.divider()
+        task_column1, task_column2 = st.columns([10,2])
+        with task_column1:
+            st.subheader("Explore your task history by date")
+        with task_column2:
+            if st.button('Task History'):
+                st.session_state.view = 'other_dates'
+                st.experimental_rerun()
+                list_tasks()
+
 def sign_in():
     with st.form(key='auth_form'):
         col1, col2 = st.columns(2)
@@ -217,6 +275,7 @@ def sign_in():
                         st.session_state["name"] = data['name']
                         st.session_state["user_id"] = user["localId"]
                         st.session_state["rerun"] = True
+                        st.session_state['loggedin'] = True
                 except:
                     try:
                         user = auth.get_user_by_email(email)
@@ -238,18 +297,22 @@ def sign_in():
                         else:
                             st.warning('Please enter your full name and username to create a new account.')
 
-if "authentication_status" not in st.session_state:
-    st.session_state["authentication_status"] = False
+def app():
+    if "authentication_status" not in st.session_state:
+        st.session_state["authentication_status"] = False
 
-if not st.session_state["authentication_status"]:
-    sign_in()
-else:
-    main_page()
+    if not st.session_state["authentication_status"]:
+        sign_in()
+    elif "view" in st.session_state and st.session_state["view"] == 'other_dates':
+        list_tasks()
+    else:
+        main_page()
+
+app()
 
 if "rerun" in st.session_state and st.session_state["rerun"]:
     st.session_state["rerun"] = False
     st.experimental_rerun()
-
 
 base_currencies = ['EUR', 'USD', 'CHF']
 target_currency = 'HUF'
