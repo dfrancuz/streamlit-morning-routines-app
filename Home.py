@@ -5,6 +5,7 @@ import pyrebase
 import os
 import pandas as pd
 import requests
+from datetime import datetime, timedelta
 
 st.set_page_config(
     page_title="Home",
@@ -113,9 +114,19 @@ def main_page():
         data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': [], 'Key': []}
         st.session_state.df = pd.DataFrame(data)
     else:
-        task_list = [{'Task': task['task'], 'Description': task['description'], 'Estimated Time (min)': task['estimated_time'], 'Status': task['status'], 'Key': key} for key, task in tasks.items()]
+        task_list = []
+        for date, tasks_for_date in tasks.items():
+            for key, task in tasks_for_date.items():
+                task_list.append({
+                    'Task': task['task'], 
+                    'Description': task['description'], 
+                    'Estimated Time (min)': task['estimated_time'], 
+                    'Status': task['status'], 
+                    'Key': key,
+                    'Date': date
+                })
         st.session_state.df = pd.DataFrame(task_list)
-
+    
     with st.form(key='task_form'):
         task = st.text_input('Enter Task')
         description = st.text_input("Enter Description")
@@ -130,7 +141,8 @@ def main_page():
                 'estimated_time': duration,
                 'status': 'Not Started'
             }
-            ref.push(new_task)
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            ref.child(current_date).push(new_task)
             new_task = pd.DataFrame({'Task': [task], 'Description': [description], 'Estimated Time (min)': [duration], 'Status': ['Not Started']})
             st.session_state.df = pd.concat([st.session_state.df, new_task], ignore_index=True)
             st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
@@ -155,14 +167,16 @@ def main_page():
                             new_status = st.selectbox('', ['Not Started', 'In Progress', 'Completed'], key=f'status_{i}', index=['Not Started', 'In Progress', 'Completed'].index(status))
                             if new_status != status:
                                 task_key = st.session_state.df.loc[i, 'Key']
-                                ref.child(task_key).update({'status': new_status})
+                                task_date = st.session_state.df.loc[i, 'Date']
+                                ref.child(f'{task_date}/{task_key}').update({'status': new_status})
                                 st.session_state.df.loc[i, 'Status'] = new_status
                                 st.experimental_rerun()
 
                             remove_button = st.button("Remove Task", key=f"remove_task_{i}")
                             if remove_button:
                                 task_key = st.session_state.df.loc[i, 'Key']
-                                ref.child(task_key).delete()
+                                task_date = st.session_state.df.loc[i, 'Date']
+                                ref.child(f'{task_date}/{task_key}').delete()
                                 st.session_state.df.drop(index=i, inplace=True)
                                 st.experimental_rerun()
                 if not tasks_exist:
