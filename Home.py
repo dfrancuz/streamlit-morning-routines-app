@@ -190,7 +190,7 @@ def main_page():
                 'estimated_time': duration,
                 'status': 'Not Started'
             }
-            
+
             if date_ref.get() is None:
                 date_ref.push(new_task)
             else:
@@ -248,15 +248,15 @@ def main_page():
             else:
                 st.markdown(f"Estimated time for incomplete tasks: **{total_time} minutes**")
 
-        st.divider()
-        task_column1, task_column2 = st.columns([10,2])
-        with task_column1:
-            st.subheader("Explore your task history by date")
-        with task_column2:
-            if st.button('Task History'):
-                st.session_state.view = 'other_dates'
-                st.experimental_rerun()
-                list_tasks()
+    st.divider()
+    task_column1, task_column2 = st.columns([10,2])
+    with task_column1:
+        st.subheader("Explore your task history by date")
+    with task_column2:
+        if st.button('Task History'):
+            st.session_state.view = 'other_dates'
+            st.experimental_rerun()
+            list_tasks()
 
 def sign_in():
     with st.form(key='auth_form'):
