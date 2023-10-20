@@ -155,24 +155,25 @@ def main_page():
             })
             st.experimental_rerun()
 
+    current_date = datetime.now().strftime('%Y-%m-%d')
     ref = db.reference(f'users/{user_id}/tasks')
-    tasks = ref.get()
-
+    date_ref = ref.child(current_date)
+    tasks = date_ref.get()
+    
     if tasks is None:
         data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': [], 'Key': []}
         st.session_state.df = pd.DataFrame(data)
     else:
         task_list = []
-        for date, tasks_for_date in tasks.items():
-            for key, task in tasks_for_date.items():
-                task_list.append({
-                    'Task': task['task'], 
-                    'Description': task['description'], 
-                    'Estimated Time (min)': task['estimated_time'], 
-                    'Status': task['status'], 
-                    'Key': key,
-                    'Date': date
-                })
+        for key, task in tasks.items():
+            task_list.append({
+                'Task': task['task'], 
+                'Description': task['description'], 
+                'Estimated Time (min)': task['estimated_time'], 
+                'Status': task['status'], 
+                'Key': key,
+                'Date': current_date
+            })
         st.session_state.df = pd.DataFrame(task_list)
     
     with st.form(key='task_form'):
@@ -189,8 +190,12 @@ def main_page():
                 'estimated_time': duration,
                 'status': 'Not Started'
             }
-            current_date = datetime.now().strftime('%Y-%m-%d')
-            ref.child(current_date).push(new_task)
+            
+            if date_ref.get() is None:
+                date_ref.push(new_task)
+            else:
+                ref.child(current_date).push(new_task)
+
             new_task = pd.DataFrame({'Task': [task], 'Description': [description], 'Estimated Time (min)': [duration], 'Status': ['Not Started']})
             st.session_state.df = pd.concat([st.session_state.df, new_task], ignore_index=True)
             st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
