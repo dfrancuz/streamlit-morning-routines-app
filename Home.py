@@ -9,7 +9,11 @@ from datetime import datetime
 import speech_recognition as sr
 import re
 import pyttsx3
-from datetime import datetime
+
+st.set_page_config(
+    page_title="Home",
+    page_icon="🏠",
+)
 
 def transcribe_speech(prompt=None):
     r = sr.Recognizer()
@@ -42,11 +46,6 @@ def speak(text):
     engine = pyttsx3.init()
     engine.say(text)
     engine.runAndWait()
-
-st.set_page_config(
-    page_title="Home",
-    page_icon="🏠",
-)
 
 cred = credentials.Certificate('serviceAccountKey.json')
 
@@ -196,7 +195,6 @@ def main_page():
     date_ref = ref.child(current_date)
     tasks = date_ref.get()
     
-
     if tasks is None:
         data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': [], 'Key': []}
         st.session_state.df = pd.DataFrame(data)
@@ -238,7 +236,6 @@ def main_page():
             st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
             st.success(f"Task '{task}' added to your morning routine and realtime database!")
     
-    st.header("Your Morning Routine")
     questions = ["What is your task name?", "How long will it take?", "Can you describe the task?"]
 
     automate_button_pressed = st.button("Automate")
@@ -292,8 +289,9 @@ def main_page():
             st.success(f"Task '{task_name}' added to your morning routine and realtime database!")
         else:
             st.error("Could not understand one or more of your responses. Please try again.")
-        
-    st.subheader("Your Morning Routine:")
+
+
+    st.header("Your Morning Routine")
     if st.session_state.df.empty:
         st.info("No tasks added yet.")
     else:
