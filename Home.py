@@ -6,11 +6,46 @@ import os
 import pandas as pd
 import requests
 from datetime import datetime
+import speech_recognition as sr
+import re
+import pyttsx3
 
 st.set_page_config(
     page_title="Home",
     page_icon="🏠",
 )
+
+def transcribe_speech(prompt=None):
+    r = sr.Recognizer()
+    is_recording = False
+
+    with sr.Microphone() as source:
+        r.adjust_for_ambient_noise(source)
+        if prompt:
+            st.write(prompt)
+
+        audio = None
+        while True:
+            try:
+                with st.spinner("Listening..."):
+                    audio = r.listen(source, timeout=4)
+                    #st.success("🛑 Recording stopped")
+                break
+            except sr.WaitTimeoutError:
+                if not is_recording:
+                    is_recording = True
+    try:
+        text = r.recognize_google(audio)
+        return text
+    except sr.UnknownValueError:
+        st.error("Could not understand audio")
+    except sr.RequestError as e:
+        st.error(f"Could not request results from Google Speech Recognition service; {e}")
+
+def speak(text):
+    engine = pyttsx3.init()
+    engine.say(text)
+    engine.runAndWait()
 
 cred = credentials.Certificate('serviceAccountKey.json')
 
@@ -201,6 +236,61 @@ def main_page():
             st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
             st.success(f"Task '{task}' added to your morning routine and realtime database!")
     
+    questions = ["What is your task name?", "How long will it take?", "Can you describe the task?"]
+
+    automate_button_pressed = st.button("Automate")
+
+    if automate_button_pressed:
+        icons = ['🔄', '🔄', '🔄']
+        responses = []
+        task_duration = None
+        
+        for i, question in enumerate(questions):
+            response_status = st.empty()
+            with response_status:
+                st.markdown(f"**{question}** {icons[i]}")
+            
+            speak(question)
+            response = transcribe_speech()
+
+            if response:
+                icons[i] = '✅'
+                if i == 1:
+                    match = re.search(r'\d+', response)
+                    if match:
+                        task_duration = int(match.group())
+                    else:
+                        task_duration = None
+                else:
+                    responses.append(response)
+                    #st.success("Response captured: " + response)
+            else:
+                icons[i] = '❌'
+                st.warning("Could not understand the response. Please try again.")
+
+            response_status.markdown(f"**{question}** {icons[i]}")
+
+        if task_duration is not None:
+            task_name, task_description = responses
+            new_task = {
+                'task': task_name,
+                'description': task_description,
+                'estimated_time': task_duration,
+                'status': 'Not Started'
+            }
+            if date_ref.get() is None:
+                date_ref.push(new_task)
+            else:
+                ref.child(current_date).push(new_task)
+                
+            new_task = pd.DataFrame({'Task': [task_name], 'Description': [task_description], 'Estimated Time (min)': [task_duration], 'Status': ['Not Started']})
+            st.session_state.df = pd.concat([st.session_state.df, new_task], ignore_index=True)
+            st.session_state[f'status_{len(st.session_state.df) - 1}'] = 'Not Started'
+            st.success(f"Task '{task_name}' added to your morning routine and realtime database!")
+        else:
+            st.error("Could not understand one or more of your responses. Please try again.")
+
+
     st.header("Your Morning Routine")
     if st.session_state.df.empty:
         st.info("No tasks added yet.")
