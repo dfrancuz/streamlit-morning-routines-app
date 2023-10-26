@@ -29,7 +29,6 @@ def transcribe_speech(prompt=None):
             try:
                 with st.spinner("Listening..."):
                     audio = r.listen(source, timeout=4)
-                    #st.success("🛑 Recording stopped")
                 break
             except sr.WaitTimeoutError:
                 if not is_recording:
@@ -39,8 +38,10 @@ def transcribe_speech(prompt=None):
         return text
     except sr.UnknownValueError:
         st.error("Could not understand audio")
+        return None
     except sr.RequestError as e:
         st.error(f"Could not request results from Google Speech Recognition service; {e}")
+        return None
 
 def speak(text):
     engine = pyttsx3.init()
@@ -238,7 +239,7 @@ def main_page():
     
     questions = ["What is your task name?", "How long will it take?", "Can you describe the task?"]
 
-    automate_button_pressed = st.button("Automate")
+    automate_button_pressed = st.button("Add via Voice")
 
     if automate_button_pressed:
         icons = ['🔄', '🔄', '🔄']
@@ -267,10 +268,11 @@ def main_page():
             else:
                 icons[i] = '❌'
                 st.warning("Could not understand the response. Please try again.")
+                return
 
             response_status.markdown(f"**{question}** {icons[i]}")
 
-        if task_duration is not None:
+        if len(responses) == 2 and task_duration is not None:
             task_name, task_description = responses
             new_task = {
                 'task': task_name,
