@@ -132,7 +132,7 @@ def list_tasks():
         if 'loggedin' in st.session_state and st.session_state['loggedin']:
             if st.button('Back'):
                 st.session_state.view = 'main_page'
-                st.experimental_rerun()
+                st.rerun()
     with col4:
         st.write(f"{st.session_state['name']}'s **Task History**")
 
@@ -189,7 +189,7 @@ def main_page():
                 'exchange_rates': {},
                 'loggedin': False,
             })
-            st.experimental_rerun()
+            st.rerun()
 
     current_date = datetime.now().strftime('%Y-%m-%d')
     ref = db.reference(f'users/{user_id}/tasks')
@@ -315,7 +315,7 @@ def main_page():
                                 task_date = st.session_state.df.loc[i, 'Date']
                                 ref.child(f'{task_date}/{task_key}').update({'status': new_status})
                                 st.session_state.df.loc[i, 'Status'] = new_status
-                                st.experimental_rerun()
+                                st.rerun()
 
                             remove_button = st.button("Remove Task", key=f"remove_task_{i}")
                             if remove_button:
@@ -323,7 +323,7 @@ def main_page():
                                 task_date = st.session_state.df.loc[i, 'Date']
                                 ref.child(f'{task_date}/{task_key}').delete()
                                 st.session_state.df.drop(index=i, inplace=True)
-                                st.experimental_rerun()
+                                st.rerun()
                 if not tasks_exist:
                     st.info("No active tasks in this section.")
 
@@ -347,7 +347,7 @@ def main_page():
     with task_column2:
         if st.button('Task History'):
             st.session_state.view = 'other_dates'
-            st.experimental_rerun()
+            st.rerun()
             list_tasks()
 
 def sign_in():
@@ -411,7 +411,7 @@ app()
 
 if "rerun" in st.session_state and st.session_state["rerun"]:
     st.session_state["rerun"] = False
-    st.experimental_rerun()
+    st.rerun()
 
 base_currencies = ['EUR', 'USD', 'CHF']
 target_currency = 'HUF'
