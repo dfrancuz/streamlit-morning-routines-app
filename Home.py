@@ -351,6 +351,8 @@ def main_page():
             list_tasks()
 
 def sign_in():
+    st.title("Welcome to Morning Routines App")
+    st.caption("Please **Sign In** or **Sign Up** to continue.")
     with st.form(key='auth_form'):
         col1, col2 = st.columns(2)
         with col1:
