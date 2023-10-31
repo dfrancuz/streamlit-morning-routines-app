@@ -192,7 +192,7 @@ def show_user_settings():
                 st.rerun()
     with col2_settings:
         st.write(f"{st.session_state['name']}'s **Settings Page**")
-    
+     
     st.subheader("Change Password")
     new_password = st.text_input("New Password", type="password")
     confirm_password = st.text_input("Confirm Password", type="password")
@@ -214,6 +214,30 @@ def show_user_settings():
                     st.success("Password changed successfully.")
                 else:
                     st.error(f"Failed to change password: {response.content}")
+            else: 
+                st.warning("Please sign in again.")
+    
+    st.subheader("Delete Account")
+    confirmation = st.text_input("Type 'DELETE' to confirm", type="password")
+    if confirmation:
+        st.warning("Warning: Deleting your account is irreversible.")
+        if confirmation == "DELETE" and st.button("Delete Account"):
+            if "refresh_token" in st.session_state:
+                id_token = refresh_id_token(st.session_state["refresh_token"])
+                url = "https://identitytoolkit.googleapis.com/v1/accounts:delete?key=" + os.environ.get('API_KEY')
+                headers = {"Content-Type": "application/json"}
+                data = {
+                    "idToken": id_token
+                }
+                response = requests.post(url, headers=headers, json=data)
+                if response.status_code == 200:
+                    st.success("Account deleted successfully.")
+                    for key in list(st.session_state.keys()):
+                        del st.session_state[key]
+                    st.session_state.view = 'sign_in_page'
+                    st.rerun()
+                else:
+                    st.error(f"Failed to delete account: {response.content}")
             else: 
                 st.warning("Please sign in again.")
 
@@ -464,6 +488,8 @@ def app():
         list_tasks()
     elif "view" in st.session_state and st.session_state["view"] == 'settings':
         show_user_settings()
+    elif "view" in st.session_state and st.session_state["view"] == 'sign_in_page':
+        sign_in()
     else:
         main_page()
 
