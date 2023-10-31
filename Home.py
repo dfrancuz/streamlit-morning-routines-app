@@ -121,7 +121,7 @@ def get_exchange_rate(base_currency, target_currency):
         return None
 
 
-left_column, middle_left, middle_right ,right_column = st.columns(4)
+left_column, middle_left, middle_right ,right_column = st.columns([2,1,4,4])
 
 def list_tasks():
     user_id = st.session_state["user_id"]
@@ -170,6 +170,19 @@ def list_tasks():
 
             st.dataframe(df, use_container_width=True)
 
+
+def show_user_settings():
+    col1_settings, col2_settings = st.columns([2,1])
+    
+    with col1_settings:
+        if 'loggedin' in st.session_state and st.session_state['loggedin']:
+            if st.button('Back'):
+                st.session_state.view = 'main_page'
+                st.rerun()
+    with col2_settings:
+        st.write(f"{st.session_state['name']}'s **Settings Page**")
+
+
 def main_page():
     if "user_id" in st.session_state:
         user_id = st.session_state["user_id"]
@@ -180,7 +193,15 @@ def main_page():
 
     st.title("Morning Routine Planner")
     with right_column:
-        st.write(f"Welcome {st.session_state['name']}!")
+        sub_col1, sub_col2 = st.columns([3,1])
+        with sub_col1:
+            st.write(f"Welcome {st.session_state['name']}!")
+        with sub_col2:
+            if st.button("⚙️"):
+                st.session_state.view = 'settings'
+                st.rerun()
+                show_user_settings()
+        
     with left_column:
         if st.button("Log Out"):
             st.session_state.clear()
@@ -404,6 +425,8 @@ def app():
         sign_in()
     elif "view" in st.session_state and st.session_state["view"] == 'other_dates':
         list_tasks()
+    elif "view" in st.session_state and st.session_state["view"] == 'settings':
+        show_user_settings()
     else:
         main_page()
 
