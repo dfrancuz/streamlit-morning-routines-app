@@ -181,6 +181,29 @@ def show_user_settings():
                 st.rerun()
     with col2_settings:
         st.write(f"{st.session_state['name']}'s **Settings Page**")
+    
+    st.subheader("Change Password")
+    new_password = st.text_input("New Password", type="password")
+    confirm_password = st.text_input("Confirm Password", type="password")
+    if st.button("Change Password"):
+        if new_password == "" or confirm_password == "":
+            st.info("Please fill out both fields.")
+        elif new_password == confirm_password:
+            if "id_token" in st.session_state:
+                url = "https://identitytoolkit.googleapis.com/v1/accounts:update?key=" + os.environ.get('API_KEY')
+                headers = {"Content-Type": "application/json"}
+                data = {
+                    "idToken": st.session_state["id_token"],
+                    "password": new_password,
+                    "returnSecureToken": True
+                }
+                response = requests.post(url, headers=headers, json=data)
+                if response.status_code == 200:
+                    st.success("Password changed successfully.")
+                else:
+                    st.error(f"Failed to change password: {response.content}")
+            else: 
+                st.warning("Please sign in again.")
 
 
 def main_page():
@@ -389,6 +412,8 @@ def sign_in():
             else:
                 try:
                     user = auth_pyrebase.sign_in_with_email_and_password(email, password)
+                    id_token = user['idToken']
+                    st.session_state["id_token"] = id_token
                     data = db.reference("users").child(user["localId"]).get()
                     if data is not None:
                         st.session_state["authentication_status"] = True
