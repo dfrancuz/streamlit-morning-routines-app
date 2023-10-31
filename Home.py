@@ -171,6 +171,17 @@ def list_tasks():
             st.dataframe(df, use_container_width=True)
 
 
+def refresh_id_token(refresh_token):
+    url = "https://securetoken.googleapis.com/v1/token?key=" + os.environ.get('API_KEY')
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    data = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+    }
+    response = requests.post(url, headers=headers, data=data)
+    return response.json()["id_token"]
+
+
 def show_user_settings():
     col1_settings, col2_settings = st.columns([2,1])
     
@@ -189,11 +200,12 @@ def show_user_settings():
         if new_password == "" or confirm_password == "":
             st.info("Please fill out both fields.")
         elif new_password == confirm_password:
-            if "id_token" in st.session_state:
+            if "refresh_token" in st.session_state:
+                id_token = refresh_id_token(st.session_state["refresh_token"])
                 url = "https://identitytoolkit.googleapis.com/v1/accounts:update?key=" + os.environ.get('API_KEY')
                 headers = {"Content-Type": "application/json"}
                 data = {
-                    "idToken": st.session_state["id_token"],
+                    "idToken": id_token,
                     "password": new_password,
                     "returnSecureToken": True
                 }
@@ -412,8 +424,8 @@ def sign_in():
             else:
                 try:
                     user = auth_pyrebase.sign_in_with_email_and_password(email, password)
-                    id_token = user['idToken']
-                    st.session_state["id_token"] = id_token
+                    refresh_token = user['refreshToken']
+                    st.session_state["refresh_token"] = refresh_token
                     data = db.reference("users").child(user["localId"]).get()
                     if data is not None:
                         st.session_state["authentication_status"] = True
