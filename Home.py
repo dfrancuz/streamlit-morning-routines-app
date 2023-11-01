@@ -192,7 +192,7 @@ def show_user_settings():
                 st.rerun()
     with col2_settings:
         st.write(f"{st.session_state['name']}'s **Settings Page**")
-     
+    
     st.subheader("Change Password")
     new_password = st.text_input("New Password", type="password")
     confirm_password = st.text_input("Confirm Password", type="password")
@@ -243,8 +243,11 @@ def show_user_settings():
 
 
 def main_page():
-    if "user_id" in st.session_state:
-        user_id = st.session_state["user_id"]
+    user_id = st.session_state.get("user_id", None)
+    
+    if "user_id" is None:
+        st.warning("Please sign in to view this page.")
+        return
     
     if 'df' not in st.session_state:
         data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': []}
@@ -472,7 +475,9 @@ def sign_in():
                                 if data is not None:
                                     st.session_state["authentication_status"] = True
                                     st.session_state["name"] = data['name']
+                                    st.session_state["user_id"] = user["localId"]
                                     st.session_state["rerun"] = True
+                                    st.session_state['loggedin'] = True
                             except:
                                 st.warning('The account already exists! Please try to sign in.')
                         else:
