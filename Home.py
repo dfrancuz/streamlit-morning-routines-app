@@ -231,6 +231,7 @@ def show_user_settings():
                 }
                 response = requests.post(url, headers=headers, json=data)
                 if response.status_code == 200:
+                    db.reference("users").child(st.session_state["user_id"]).delete()
                     st.success("Account deleted successfully.")
                     for key in list(st.session_state.keys()):
                         del st.session_state[key]
@@ -447,7 +448,7 @@ def sign_in():
 
         if st.form_submit_button('Sign In / Sign Up'):
             if(email =='' or password == ''):
-                st.warning('Please enter your email and password to sign in.')
+                st.warning('Please enter your email and password.')
             else:
                 if username !='' and name !='':
                     try:
