@@ -447,41 +447,37 @@ def sign_in():
 
         if st.form_submit_button('Sign In / Sign Up'):
             if(email =='' or password == ''):
-                st.warning('Please enter your email and password.')
+                st.warning('Please enter your email and password to sign in.')
             else:
-                try:
-                    user = auth_pyrebase.sign_in_with_email_and_password(email, password)
-                    refresh_token = user['refreshToken']
-                    st.session_state["refresh_token"] = refresh_token
-                    data = db.reference("users").child(user["localId"]).get()
-                    if data is not None:
-                        st.session_state["authentication_status"] = True
-                        st.session_state["name"] = data['name']
-                        st.session_state["user_id"] = user["localId"]
-                        st.session_state["rerun"] = True
-                        st.session_state['loggedin'] = True
-                except:
+                if username !='' and name !='':
                     try:
-                        user = auth.get_user_by_email(email)
-                        if user is not None or user["email"] == email and user["password"] != password:
-                            st.warning('Wrong credentials. Please try again.')
+                        user = auth_pyrebase.create_user_with_email_and_password(email, password)
+                        data = {"name": name, "username": username}
+                        db.reference("users").child(user["localId"]).set(data)
+                        data = db.reference("users").child(user["localId"]).get()
+                        if data is not None:
+                            st.session_state["authentication_status"] = True
+                            st.session_state["name"] = data['name']
+                            st.session_state["user_id"] = user["localId"]
+                            st.session_state["refresh_token"] = user['refreshToken']
+                            st.session_state["rerun"] = True
+                            st.session_state['loggedin'] = True
                     except:
-                        if(username !='' and name !=''):
-                            try:
-                                user = auth_pyrebase.create_user_with_email_and_password(email, password)
-                                data = {"name": name, "username": username}
-                                db.reference("users").child(user["localId"]).set(data)
-                                data = db.reference("users").child(user["localId"]).get()
-                                if data is not None:
-                                    st.session_state["authentication_status"] = True
-                                    st.session_state["name"] = data['name']
-                                    st.session_state["user_id"] = user["localId"]
-                                    st.session_state["rerun"] = True
-                                    st.session_state['loggedin'] = True
-                            except:
-                                st.warning('The account already exists! Please try to sign in.')
-                        else:
-                            st.warning('Please enter your full name and username to create a new account.')
+                        st.warning('The account already exists! Please try to sign in.')
+                else:
+                    try:
+                        user = auth_pyrebase.sign_in_with_email_and_password(email, password)
+                        refresh_token = user['refreshToken']
+                        st.session_state["refresh_token"] = refresh_token
+                        data = db.reference("users").child(user["localId"]).get()
+                        if data is not None:
+                            st.session_state["authentication_status"] = True
+                            st.session_state["name"] = data['name']
+                            st.session_state["user_id"] = user["localId"]
+                            st.session_state["rerun"] = True
+                            st.session_state['loggedin'] = True
+                    except:
+                        st.warning('Wrong credentials. Please try again.')
 
 def app():
     if "authentication_status" not in st.session_state:
