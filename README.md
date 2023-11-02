@@ -18,7 +18,7 @@ Follow these steps to install and run Morning Routines Application on your local
 
 2. **Setup (Optional)**
    - It's recommended to use a virtual environment to keep the dependencies used by this project separate from your other Python projects.
-   - If you're using Miniconda, you can create a new environment with the following command: `conda create --name myenv`
+   - If you're using [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/), you can create a new environment with the following command: `conda create --name myenv`
    - Activate the environment using: `conda activate myenv`
 
 3. **Prerequisites**
@@ -26,7 +26,7 @@ Follow these steps to install and run Morning Routines Application on your local
    - If not, in your Command Prompt or terminal, navigate to the project directory and type the following command: `pip install -r requirements.txt`
 
 4. **Setup API Keys and Firebase**
-   - This application uses [Firebase](https://firebase.google.com/) for data storage and APIs for [weather](https://openweathermap.org/) and [currency exchange](https://app.currencyapi.com/login). You need to set up your own API keys and Firebase credentials before running the application.
+   - This application uses [Firebase](https://firebase.google.com/) for data storage and APIs for [weather](https://openweathermap.org/) updates and [currency](https://app.currencyapi.com/login) exchange. You need to set up your own API keys and Firebase credentials before running the application. For more information on how to set up and connect Firebase with your Streamlit app, please visit this [link](https://firebase.google.com/docs/auth/admin).
    - Create a `serviceAccountKey.json` file with your Firebase service account key and place it in the root directory of the project.
    - Set up the following environment variables with your own values:
      
@@ -47,5 +47,5 @@ Follow these steps to install and run Morning Routines Application on your local
 
 5. **Run the Application**
    - After setting up your API keys and Firebase credentials, you can run the application by executing the following command in your terminal: `streamlit run Home.py`
-   - Once the application is running, you should see a display similar to [this](https://i.imgur.com/mB7rNVv.png)
+   - Once the application is running, you should see a display similar to [this](https://i.imgur.com/mB7rNVv.png).
   
