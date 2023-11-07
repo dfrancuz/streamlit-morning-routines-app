@@ -5,9 +5,10 @@ import firebase_admin
 import streamlit as st
 from datetime import datetime
 from classes.user import User
+from classes.task import Task
 from classes.auth_service import AuthService
 from classes.user_service import UserService
-from classes.task import Task
+from classes.task_service import TaskService
 from firebase_admin import credentials, db
 from modules.speech_recognition_module import add_task_via_voice
 from modules.APIs_module import get_forecast, get_exchange_rate
@@ -39,6 +40,7 @@ def initialize_firebase():
 auth_pyrebase, db = initialize_firebase()
 auth_service = AuthService()
 user_service = UserService()
+task_service = TaskService()
 
 def authenticate(auth_pyrebase, db):
     st.title("Welcome to Morning Routines App")
@@ -144,16 +146,30 @@ def main_page():
     if submit_button:
         if task != '' and duration > 0:
             new_task = Task(task, description, duration)
-            new_task.add_task(date_ref, ref, current_date)
+            task_service.add_task(new_task, date_ref, ref, current_date)
+            new_task_df = pd.DataFrame({'Task': [new_task.task], 
+                                        'Description': [new_task.description], 
+                                        'Estimated Time (min)': [new_task.duration], 
+                                        'Status': [new_task.status]})
+            st.session_state.df = pd.concat([st.session_state.df, new_task_df], ignore_index=True)
+            st.session_state[f'status_{len(st.session_state.df) - 1}'] = new_task.status
+            st.success(f"Task '{new_task.task}' added to your morning routine and realtime database!")
     
     automate_button_pressed = st.button("Add via Voice")
 
     if automate_button_pressed:
-        new_task = add_task_via_voice()
-        if new_task is not None:
-            task_name, task_description, task_duration = new_task['Task'], new_task['Description'], new_task['Estimated Time (min)']
+        new_task_data = add_task_via_voice()
+        if new_task_data is not None:
+            task_name, task_description, task_duration = new_task_data['Task'], new_task_data['Description'], new_task_data['Estimated Time (min)']
             new_task = Task(task_name, task_description, task_duration)
-            new_task.add_task(date_ref, ref, current_date)
+            task_service.add_task(new_task, date_ref, ref, current_date)
+            new_task_df = pd.DataFrame({'Task': [new_task.task], 
+                                        'Description': [new_task.description], 
+                                        'Estimated Time (min)': [new_task.duration], 
+                                        'Status': [new_task.status]})
+            st.session_state.df = pd.concat([st.session_state.df, new_task_df], ignore_index=True)
+            st.session_state[f'status_{len(st.session_state.df) - 1}'] = new_task.status
+            st.success(f"Task '{new_task.task}' added to your morning routine and realtime database!")
 
     st.header("Your Morning Routine")
     if st.session_state.df.empty:
@@ -173,13 +189,27 @@ def main_page():
                             st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
                             new_status = st.selectbox('', ['Not Started', 'In Progress', 'Completed'], key=f'status_{i}', index=['Not Started', 'In Progress', 'Completed'].index(status))
                             if new_status != status:
-                                task = Task(st.session_state.df.loc[i, 'Task'], st.session_state.df.loc[i, 'Description'], st.session_state.df.loc[i, 'Estimated Time (min)'], status, st.session_state.df.loc[i, 'Key'], st.session_state.df.loc[i, 'Date'])
-                                task.change_status(i, new_status, ref)
+                                task = Task(st.session_state.df.loc[i, 'Task'], 
+                                            st.session_state.df.loc[i, 'Description'], 
+                                            st.session_state.df.loc[i, 'Estimated Time (min)'], 
+                                            status, 
+                                            st.session_state.df.loc[i, 'Key'], 
+                                            st.session_state.df.loc[i, 'Date'])
+                                task_service.change_status(task, new_status, ref)
+                                st.session_state.df.loc[i, 'Status'] = new_status
+                                st.rerun()
 
                             remove_button = st.button("Remove Task", key=f"remove_task_{i}")
                             if remove_button:
-                                task = Task(st.session_state.df.loc[i, 'Task'], st.session_state.df.loc[i, 'Description'], st.session_state.df.loc[i, 'Estimated Time (min)'], status, st.session_state.df.loc[i, 'Key'], st.session_state.df.loc[i, 'Date'])
-                                task.remove_task(i, ref)
+                                task = Task(st.session_state.df.loc[i, 'Task'], 
+                                            st.session_state.df.loc[i, 'Description'], 
+                                            st.session_state.df.loc[i, 'Estimated Time (min)'], 
+                                            status, 
+                                            st.session_state.df.loc[i, 'Key'], 
+                                            st.session_state.df.loc[i, 'Date'])
+                                task_service.remove_task(task, ref)
+                                st.session_state.df.drop(index=i, inplace=True)
+                                st.rerun()
                 if not tasks_exist:
                     st.info("No active tasks in this section.")
 
