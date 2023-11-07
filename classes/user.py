@@ -46,7 +46,7 @@ class User:
     
     def change_password(self, new_password, auth_pyrebase):
         try:
-            id_token = self.refresh_id_token()
+            id_token = self._refresh_id_token()
             url = "https://identitytoolkit.googleapis.com/v1/accounts:update?key=" + os.environ.get('API_KEY')
             headers = {"Content-Type": "application/json"}
             data = {
@@ -56,16 +56,16 @@ class User:
             }
             response = requests.post(url, headers=headers, json=data)
             if response.status_code == 200:
-                return True
+                return response.json()["refreshToken"], response.json()["idToken"]
             else:
                 raise Exception(f"Failed to change password: {response.content}")
         except Exception as e:
             print(f"Error: {e}")
-            return False
+            return None, None
 
     def delete_account(self, db):
         try:
-            id_token = self.refresh_id_token()
+            id_token = self._refresh_id_token()
             url = "https://identitytoolkit.googleapis.com/v1/accounts:delete?key=" + os.environ.get('API_KEY')
             headers = {"Content-Type": "application/json"}
             data = {
@@ -81,7 +81,7 @@ class User:
             print(f"Error: {e}")
             return False
 
-    def refresh_id_token(self):
+    def _refresh_id_token(self):
         try:
             url = "https://securetoken.googleapis.com/v1/token?key=" + os.environ.get('API_KEY')
             headers = {"Content-Type": "application/x-www-form-urlencoded"}

@@ -53,7 +53,6 @@ def sign_in(auth_pyrebase, db):
                 st.warning('Please enter your email and password.')
             else:
                 user = User(name, email, username, password)
-                #print(user.__dict__)
                 if username !='' and name !='':
                     success, error_message = user.sign_up(auth_pyrebase, db)
                     if success:
@@ -217,7 +216,32 @@ def show_forecast():
     temp_row[0].markdown(f"💧 {weather_data['main']['humidity']}%")
     temp_row[1].markdown(f"💨 {weather_data['wind']['speed']} m/s")
 
-show_forecast()
+def show_exchange_rate(base_currencies, target_currency):
+    if "exchange_rates" not in st.session_state:
+        st.session_state.exchange_rates = {}
+
+    button_placeholder = st.sidebar.empty()
+
+    if not all(base_currency in st.session_state.exchange_rates for base_currency in base_currencies):
+        button = button_placeholder.button("Check Currency Exchange")
+
+        if button:
+            button_placeholder.empty()
+
+            with st.sidebar.expander("Exchange Rates"):
+                for base_currency in base_currencies:
+                    rate = get_exchange_rate(base_currency, target_currency)
+                    if rate is not None:
+                        formatted_rate = format(rate, '.2f')
+                        st.session_state.exchange_rates[base_currency] = rate
+                        st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
+    else:
+        with st.sidebar.expander("Exchange Rates"):
+            for base_currency in base_currencies:
+                rate = st.session_state.exchange_rates[base_currency]
+                formatted_rate = format(rate, '.2f')
+                st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
+
 
 def list_tasks():
     user_id = st.session_state["user_id"]
@@ -289,8 +313,13 @@ def show_user_settings():
     if st.button("Change Password"):
         if new_password == "" or confirm_password == "":
             st.info("Please fill out both fields.")
+        elif new_password != confirm_password:
+            st.warning("Fields do not match!")
         elif new_password == confirm_password:
-            if current_user.change_password(new_password, auth_pyrebase):
+            refresh_token, id_token = current_user.change_password(new_password, auth_pyrebase)
+            if refresh_token and id_token:
+                st.session_state["refresh_token"] = refresh_token
+                st.session_state["id_token"] = id_token
                 st.success("Password changed successfully.")
             else:
                 st.error("Failed to change password.")
@@ -327,34 +356,10 @@ def app():
         st.rerun()
 
     #print(st.session_state)
+    
+    show_forecast()
+    show_exchange_rate(['EUR', 'USD', 'CHF'], 'HUF')
 
-    base_currencies = ['EUR', 'USD', 'CHF']
-    target_currency = 'HUF'
-
-    if "exchange_rates" not in st.session_state:
-        st.session_state.exchange_rates = {}
-
-    button_placeholder = st.sidebar.empty()
-
-    if not all(base_currency in st.session_state.exchange_rates for base_currency in base_currencies):
-        button = button_placeholder.button("Check Currency Exchange")
-
-        if button:
-            button_placeholder.empty()
-
-            with st.sidebar.expander("Exchange Rates"):
-                for base_currency in base_currencies:
-                    rate = get_exchange_rate(base_currency, target_currency)
-                    if rate is not None:
-                        formatted_rate = format(rate, '.2f')
-                        st.session_state.exchange_rates[base_currency] = rate
-                        st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
-    else:
-        with st.sidebar.expander("Exchange Rates"):
-            for base_currency in base_currencies:
-                rate = st.session_state.exchange_rates[base_currency]
-                formatted_rate = format(rate, '.2f')
-                st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
 
 if __name__ == "__main__":
     app()
