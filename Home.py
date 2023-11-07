@@ -5,6 +5,8 @@ import firebase_admin
 import streamlit as st
 from datetime import datetime
 from classes.user import User
+from classes.auth_service import AuthService
+from classes.user_service import UserService
 from classes.task import Task
 from firebase_admin import credentials, db
 from modules.speech_recognition_module import add_task_via_voice
@@ -35,8 +37,10 @@ def initialize_firebase():
     return auth_pyrebase, db
 
 auth_pyrebase, db = initialize_firebase()
+auth_service = AuthService()
+user_service = UserService()
 
-def sign_in(auth_pyrebase, db):
+def authenticate(auth_pyrebase, db):
     st.title("Welcome to Morning Routines App")
     st.caption("Please **Sign In** or **Sign Up** to continue.")
     with st.form(key='auth_form'):
@@ -54,7 +58,7 @@ def sign_in(auth_pyrebase, db):
             else:
                 user = User(name, email, username, password)
                 if username !='' and name !='':
-                    success, error_message = user.sign_up(auth_pyrebase, db)
+                    success, error_message = auth_service.sign_up(user, auth_pyrebase, db)
                     if success:
                         st.session_state["authentication_status"] = True
                         st.session_state["name"] = user.name
@@ -65,7 +69,7 @@ def sign_in(auth_pyrebase, db):
                     else:
                         st.warning(error_message)
                 elif username =='' and name =='':
-                    success, error_message = user.sign_in(auth_pyrebase, db)
+                    success, error_message = auth_service.sign_in(user, auth_pyrebase, db)
                     if success:
                         st.session_state["authentication_status"] = True
                         st.session_state["name"] = user.name
@@ -316,7 +320,7 @@ def show_user_settings():
         elif new_password != confirm_password:
             st.warning("Fields do not match!")
         elif new_password == confirm_password:
-            refresh_token, id_token = current_user.change_password(new_password, auth_pyrebase)
+            refresh_token, id_token = user_service.change_password(current_user, new_password, auth_pyrebase)
             if refresh_token and id_token:
                 st.session_state["refresh_token"] = refresh_token
                 st.session_state["id_token"] = id_token
@@ -327,7 +331,7 @@ def show_user_settings():
     st.subheader("Delete Account")
     confirmation = st.text_input("Type 'DELETE' to confirm", type="password")
     if confirmation == "DELETE" and st.button("Delete Account"):
-        if current_user.delete_account(db):
+        if user_service.delete_account(current_user, db):
             st.success("Account deleted successfully.")
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
@@ -341,21 +345,19 @@ def app():
         st.session_state["authentication_status"] = False
 
     if not st.session_state["authentication_status"]:
-        sign_in(auth_pyrebase, db)
+        authenticate(auth_pyrebase, db)
     elif "view" in st.session_state and st.session_state["view"] == 'other_dates':
         list_tasks()
     elif "view" in st.session_state and st.session_state["view"] == 'settings':
         show_user_settings()
     elif "view" in st.session_state and st.session_state["view"] == 'sign_in_page':
-        sign_in(auth_pyrebase, db)
+        authenticate(auth_pyrebase, db)
     else:
         main_page()
 
     if "rerun" in st.session_state and st.session_state["rerun"]:
         st.session_state["rerun"] = False
         st.rerun()
-
-    #print(st.session_state)
     
     show_forecast()
     show_exchange_rate(['EUR', 'USD', 'CHF'], 'HUF')
