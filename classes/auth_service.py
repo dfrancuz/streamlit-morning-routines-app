@@ -13,6 +13,8 @@ class AuthService:
                 return False, "You entered wrong credentials, or you don't have an account with this email."
             elif "INVALID_EMAIL" in error_message:
                 return False, "Please enter valid email."
+            elif "TOO_MANY_ATTEMPTS_TRY_LATER" in error_message:
+                return False, "Access to this account has been temporarily disabled due to many failed login attempts."
             else:
                 return False, "An error occurred during sign in."
 
@@ -27,6 +29,8 @@ class AuthService:
         except Exception as e:
             error_message = str(e)
             if "EMAIL_EXISTS" in error_message:
-                return False, "The email already exists. Please sign in!"
+                return False, "This email is already associated with an account. Please sign in!"
+            elif "WEAK_PASSWORD" in error_message:
+                return False, "Password should be at least 6 characters."
             else:
                 return False, "An error occurred during sign up."

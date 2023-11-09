@@ -68,9 +68,10 @@ def authenticate(auth_pyrebase, db):
                         st.session_state["refresh_token"] = user.refresh_token
                         st.session_state["rerun"] = True
                         st.session_state['loggedin'] = True
+                        st.session_state["view"] = "main_page"
                     else:
                         st.warning(error_message)
-                elif username =='' and name =='':
+                else:
                     success, error_message = auth_service.sign_in(user, auth_pyrebase, db)
                     if success:
                         st.session_state["authentication_status"] = True
@@ -79,6 +80,7 @@ def authenticate(auth_pyrebase, db):
                         st.session_state["refresh_token"] = user.refresh_token
                         st.session_state["rerun"] = True
                         st.session_state['loggedin'] = True
+                        st.session_state["view"] = "main_page"
                     else:
                         st.warning(error_message)
 
@@ -234,7 +236,7 @@ def main_page():
         if st.button('Task History'):
             st.session_state.view = 'other_dates'
             st.rerun()
-            list_tasks()
+            list_user_tasks()
 
 def show_forecast():
     
@@ -277,7 +279,7 @@ def show_exchange_rate(base_currencies, target_currency):
                 st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
 
 
-def list_tasks():
+def list_user_tasks():
     user_id = st.session_state["user_id"]
 
     col3, col4 = st.columns([2,1])
@@ -306,11 +308,11 @@ def list_tasks():
             st.info("No tasks for the selected date.")
         else:
             task_list = []
-            for key, task in tasks.items():
+            for task in tasks.items():
                 task_list.append({
                     'Task': task['task'], 
                     'Description': task['description'],
-                    'Time': task['estimated_time'],
+                    'Time (min)': task['estimated_time'],
                     'Status': task['status']
                 })
             df = pd.DataFrame(task_list)
@@ -377,21 +379,20 @@ def app():
     if not st.session_state["authentication_status"]:
         authenticate(auth_pyrebase, db)
     elif "view" in st.session_state and st.session_state["view"] == 'other_dates':
-        list_tasks()
+        list_user_tasks()
     elif "view" in st.session_state and st.session_state["view"] == 'settings':
         show_user_settings()
     elif "view" in st.session_state and st.session_state["view"] == 'sign_in_page':
         authenticate(auth_pyrebase, db)
     else:
         main_page()
-
+    
     if "rerun" in st.session_state and st.session_state["rerun"]:
         st.session_state["rerun"] = False
         st.rerun()
-    
+
     show_forecast()
     show_exchange_rate(['EUR', 'USD', 'CHF'], 'HUF')
-
 
 if __name__ == "__main__":
     app()
