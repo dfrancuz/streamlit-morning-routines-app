@@ -1,4 +1,5 @@
 import os
+import time
 import pyrebase
 import pandas as pd
 import firebase_admin
@@ -19,23 +20,27 @@ st.set_page_config(
 )
 
 def initialize_firebase():
-    cred = credentials.Certificate('serviceAccountKey.json')
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(cred, {
-            'databaseURL': os.environ.get('DATABASE_URL')
-        })
-    firebaseConfig = {
-                'apiKey': os.environ.get('API_KEY'),
-                'authDomain': os.environ.get('AUTH_DOMAIN'),
-                'databaseURL': os.environ.get('BASE_URL'),
-                'projectId': os.environ.get('PROJECT_ID'),
-                'storageBucket': os.environ.get('STORAGE_BUCKET'),
-                'messagingSenderId': os.environ.get('MESSAGING_SENDER_ID'),
-                'appId': os.environ.get('APP_ID')
-    }
-    firebase = pyrebase.initialize_app(firebaseConfig)
-    auth_pyrebase = firebase.auth()
-    return auth_pyrebase, db
+    try:
+        cred = credentials.Certificate('serviceAccountKey.json')
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': os.environ.get('DATABASE_URL')
+            })
+        firebaseConfig = {
+                    'apiKey': os.environ.get('API_KEY'),
+                    'authDomain': os.environ.get('AUTH_DOMAIN'),
+                    'databaseURL': os.environ.get('BASE_URL'),
+                    'projectId': os.environ.get('PROJECT_ID'),
+                    'storageBucket': os.environ.get('STORAGE_BUCKET'),
+                    'messagingSenderId': os.environ.get('MESSAGING_SENDER_ID'),
+                    'appId': os.environ.get('APP_ID')
+        }
+        firebase = pyrebase.initialize_app(firebaseConfig)
+        auth_pyrebase = firebase.auth()
+        return auth_pyrebase, db
+    except Exception as e:
+        st.error(f"Failed to connect to database service!")
+        return None, None
 
 auth_pyrebase, db = initialize_firebase()
 auth_service = AuthService()
@@ -278,7 +283,6 @@ def show_exchange_rate(base_currencies, target_currency):
                 formatted_rate = format(rate, '.2f')
                 st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
 
-
 def list_user_tasks():
     user_id = st.session_state["user_id"]
 
@@ -308,7 +312,7 @@ def list_user_tasks():
             st.info("No tasks for the selected date.")
         else:
             task_list = []
-            for task in tasks.items():
+            for key, task in tasks.items():
                 task_list.append({
                     'Task': task['task'], 
                     'Description': task['description'],
@@ -325,7 +329,6 @@ def list_user_tasks():
             df['Status'] = df['Status'].map(status_icons)
 
             st.dataframe(df, use_container_width=True)
-
 
 def show_user_settings():
     col1_settings, col2_settings = st.columns([2,1])
@@ -358,7 +361,7 @@ def show_user_settings():
                 st.session_state["id_token"] = id_token
                 st.success("Password changed successfully.")
             else:
-                st.error("Failed to change password.")
+                st.error("Credentials too old, sign in again!")
     
     st.subheader("Delete Account")
     confirmation = st.text_input("Type 'DELETE' to confirm", type="password")
@@ -370,7 +373,7 @@ def show_user_settings():
             st.session_state.view = 'sign_in_page'
             st.rerun()
         else:
-            st.error("Failed to delete account.")
+            st.error("Credentials too old, sign in again!")
 
 def app():
     if "authentication_status" not in st.session_state:

@@ -32,5 +32,7 @@ class AuthService:
                 return False, "This email is already associated with an account. Please sign in!"
             elif "WEAK_PASSWORD" in error_message:
                 return False, "Password should be at least 6 characters."
+            elif "INVALID_EMAIL" in error_message:
+                return False, "Please enter valid email."
             else:
                 return False, "An error occurred during sign up."
