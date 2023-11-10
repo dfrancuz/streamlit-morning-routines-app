@@ -1,6 +1,7 @@
 import os
 import requests
 
+
 class UserService:
     def change_password(self, user, new_password, auth_pyrebase):
         try:

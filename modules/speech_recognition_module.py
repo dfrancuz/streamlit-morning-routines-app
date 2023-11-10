@@ -3,10 +3,12 @@ import pyttsx3
 import streamlit as st
 import speech_recognition as sr
 
+
 def _speak(text):
     engine = pyttsx3.init()
     engine.say(text)
     engine.runAndWait()
+
 
 def _transcribe_speech(prompt=None):
     r = sr.Recognizer()
@@ -36,6 +38,7 @@ def _transcribe_speech(prompt=None):
         st.error(f"Could not request results from Google Speech Recognition service; {e}")
         return None
 
+
 def add_task_via_voice():
     questions = ["What is your task name?", "How long will it take?", "Can you describe the task?"]
     responses = []
@@ -55,7 +58,7 @@ def add_task_via_voice():
             else:
                 responses.append(response)
         else:
-            #print("Could not understand the response. Please try again.")
+            # print("Could not understand the response. Please try again.")
             return None
 
     if len(responses) == 2 and task_duration is not None:
@@ -67,5 +70,5 @@ def add_task_via_voice():
             'Status': 'Not Started'
         }
     else:
-        #print("Could not understand one or more of your responses. Please try again.")
+        # print("Could not understand one or more of your responses. Please try again.")
         return None
