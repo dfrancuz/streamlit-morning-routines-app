@@ -12,7 +12,7 @@ def local_css(file_name):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
-local_css("style/style_home.css")
+local_css("style/style_contact.css")
 
 st.title('Contact Form')
 
@@ -22,7 +22,8 @@ contact_form = f"""
 <form action="{formsubmit_url}" method="POST">
      <input type="text" name="name" placeholder="Full Name" required>
      <input type="email" name="email" placeholder="Email Address" required>
-     <textarea name="message" placeholder="Your message"></textarea>
+     <input type="text" name="topic" placeholder="Topic Name">
+     <textarea name="message" placeholder="Your message here..."></textarea>
      <button type="submit">Send</button>
 </form>
 """
