@@ -39,7 +39,6 @@ def initialize_firebase():
         auth_pyrebase = firebase.auth()
         return auth_pyrebase, db
     except Exception as e:
-        print(str(e))
         st.error("Failed to connect to database service!")
         return None, None
 
@@ -146,7 +145,7 @@ def main_page():
     tasks = date_ref.get()
 
     if tasks is None:
-        data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': [], 'Key': []}
+        data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': [], 'Key': [], 'Date': []}
         st.session_state.df = pd.DataFrame(data)
     else:
         task_list = []
