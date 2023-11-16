@@ -49,6 +49,16 @@ user_service = UserService()
 task_service = TaskService()
 
 
+def set_session_state_variables(user):
+    st.session_state["authentication_status"] = True
+    st.session_state["name"] = user.name
+    st.session_state["user_id"] = user.user_id
+    st.session_state["refresh_token"] = user.refresh_token
+    st.session_state["rerun"] = True
+    st.session_state['loggedin'] = True
+    st.session_state["view"] = "main_page"
+
+
 def authenticate(auth_pyrebase, db):
     st.title("Welcome to Morning Routines App")
     st.caption("Please **Sign In** or **Sign Up** to continue.")
@@ -69,25 +79,13 @@ def authenticate(auth_pyrebase, db):
                 if username != '' and name != '':
                     success, error_message = auth_service.sign_up(user, auth_pyrebase, db)
                     if success:
-                        st.session_state["authentication_status"] = True
-                        st.session_state["name"] = user.name
-                        st.session_state["user_id"] = user.user_id
-                        st.session_state["refresh_token"] = user.refresh_token
-                        st.session_state["rerun"] = True
-                        st.session_state['loggedin'] = True
-                        st.session_state["view"] = "main_page"
+                        set_session_state_variables(user)
                     else:
                         st.warning(error_message)
                 else:
                     success, error_message = auth_service.sign_in(user, auth_pyrebase, db)
                     if success:
-                        st.session_state["authentication_status"] = True
-                        st.session_state["name"] = user.name
-                        st.session_state["user_id"] = user.user_id
-                        st.session_state["refresh_token"] = user.refresh_token
-                        st.session_state["rerun"] = True
-                        st.session_state['loggedin'] = True
-                        st.session_state["view"] = "main_page"
+                        set_session_state_variables(user)
                     else:
                         st.warning(error_message)
 
