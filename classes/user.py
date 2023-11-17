@@ -1,3 +1,4 @@
+# User class to represent user information
 class User:
     def __init__(self, name, email, username, password, user_id=None, refresh_token=None):
         self.name = name

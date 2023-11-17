@@ -1,3 +1,4 @@
+# Task class with associated properties
 class Task:
     def __init__(self, task, description, duration, status='Not Started', key=None, date=None):
         self.task = task

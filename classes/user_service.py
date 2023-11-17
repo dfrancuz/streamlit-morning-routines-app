@@ -1,8 +1,10 @@
 import os
 import requests
 
-
+# Class for managing user-related operations
 class UserService:
+
+    # Method to change the password of a user
     def change_password(self, user, new_password, auth_pyrebase):
         try:
             id_token = self._refresh_id_token(user)
@@ -22,6 +24,7 @@ class UserService:
             print(f"Error: {e}")
             return None, None
 
+    # Method to delete a user account
     def delete_account(self, user, db):
         try:
             id_token = self._refresh_id_token(user)
@@ -40,6 +43,7 @@ class UserService:
             print(f"Error: {e}")
             return False
 
+    # Private method to refresh the user's ID token during security-sensitive operations 
     def _refresh_id_token(self, user):
         try:
             url = "https://securetoken.googleapis.com/v1/token?key=" + os.environ.get('API_KEY')

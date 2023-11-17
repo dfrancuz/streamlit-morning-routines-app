@@ -3,13 +3,13 @@ import pyttsx3
 import streamlit as st
 import speech_recognition as sr
 
-
+# Function uses text-to-speech to vocalize the provided text
 def _speak(text):
     engine = pyttsx3.init()
     engine.say(text)
     engine.runAndWait()
 
-
+# Function transcribes speech from input voice
 def _transcribe_speech(prompt=None):
     r = sr.Recognizer()
     is_recording = False
@@ -38,7 +38,7 @@ def _transcribe_speech(prompt=None):
         st.error(f"Could not request results from Google Speech Recognition service; {e}")
         return None
 
-
+# Function that adds a task via voice input
 def add_task_via_voice():
     questions = ["What is your task name?", "How long will it take?", "Can you describe the task?"]
     responses = []
@@ -48,8 +48,11 @@ def add_task_via_voice():
         _speak(question)
         response = _transcribe_speech()
 
+        # Process the response based on the question index
         if response:
             if i == 1:
+
+                # Extract numeric duration from this response
                 match = re.search(r'\d+', response)
                 if match:
                     task_duration = int(match.group())

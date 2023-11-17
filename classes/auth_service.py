@@ -1,4 +1,7 @@
+# Class for managing user Authentication operations
 class AuthService:
+
+    # Method to sign in a user
     def sign_in(self, user, auth_pyrebase, db):
         try:
             user_data = auth_pyrebase.sign_in_with_email_and_password(user.email, user.password)
@@ -8,6 +11,8 @@ class AuthService:
             user.name = db_user_data['name']
             return True, ""
         except Exception as e:
+
+            # Handle multiple sign-in related exceptions and provide a user-friendly output error message
             error_message = str(e)
             if "INVALID_LOGIN_CREDENTIALS" in error_message:
                 return False, "You entered wrong credentials, or you don't have an account with this email."
@@ -18,6 +23,7 @@ class AuthService:
             else:
                 return False, "An error occurred during sign in."
 
+    # Method to sign up a new user
     def sign_up(self, user, auth_pyrebase, db):
         try:
             user_data = auth_pyrebase.create_user_with_email_and_password(user.email, user.password)
@@ -27,6 +33,8 @@ class AuthService:
             user.refresh_token = user_data['refreshToken']
             return True, ""
         except Exception as e:
+
+            # Handle multiple sign-up related exceptions and provide a user-friendly output error message
             error_message = str(e)
             if "EMAIL_EXISTS" in error_message:
                 return False, "This email is already associated with an account. Please sign in!"

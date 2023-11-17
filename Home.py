@@ -13,20 +13,24 @@ from firebase_admin import credentials, db
 from modules.speech_recognition_module import add_task_via_voice
 from modules.APIs_module import get_forecast, get_exchange_rate
 
+# Set Streamlit page configuration
 st.set_page_config(
     page_title="Home",
     page_icon="🏠",
 )
 
 
+# Function to initialize Firebase
 def initialize_firebase():
     try:
+        # Load Firebase credentials and initialize Firebase Admin SDK
         cred = credentials.Certificate('serviceAccountKey.json')
         if not firebase_admin._apps:
             firebase_admin.initialize_app(cred, {
                 'databaseURL': os.environ.get('DATABASE_URL')
             })
-        firebaseConfig = {
+        # Initialize Pyrebase with Firebase project configuration
+        firebase_config = {
                     'apiKey': os.environ.get('API_KEY'),
                     'authDomain': os.environ.get('AUTH_DOMAIN'),
                     'databaseURL': os.environ.get('BASE_URL'),
@@ -35,20 +39,23 @@ def initialize_firebase():
                     'messagingSenderId': os.environ.get('MESSAGING_SENDER_ID'),
                     'appId': os.environ.get('APP_ID')
         }
-        firebase = pyrebase.initialize_app(firebaseConfig)
+        firebase = pyrebase.initialize_app(firebase_config)
         auth_pyrebase = firebase.auth()
         return auth_pyrebase, db
     except Exception as e:
         st.error("Failed to connect to database service!")
+        print(f"Exception {e}")
         return None, None
 
 
+# Global variables for Firebase authentication and database
 auth_pyrebase, db = initialize_firebase()
 auth_service = AuthService()
 user_service = UserService()
 task_service = TaskService()
 
 
+# Function to set session state variables upon successful authentication
 def set_session_state_variables(user):
     st.session_state["authentication_status"] = True
     st.session_state["name"] = user.name
@@ -59,9 +66,12 @@ def set_session_state_variables(user):
     st.session_state["view"] = "main_page"
 
 
+# Function to handle user authentication
 def authenticate(auth_pyrebase, db):
     st.title("Welcome to Morning Routines App")
     st.caption("Please **Sign In** or **Sign Up** to continue.")
+
+    # Authentication form
     with st.form(key='auth_form'):
         col1, col2 = st.columns(2)
         with col1:
@@ -71,17 +81,22 @@ def authenticate(auth_pyrebase, db):
             username = st.text_input('Username')
             password = st.text_input('Password', type='password')
 
+        # Check if user has pressed the button
         if st.form_submit_button('Sign In / Sign Up'):
             if (email == '' or password == ''):
                 st.warning('Please enter your email and password.')
             else:
                 user = User(name, email, username, password)
+
+                # Sign up the user if all fields are filled
                 if username != '' and name != '':
                     success, error_message = auth_service.sign_up(user, auth_pyrebase, db)
                     if success:
                         set_session_state_variables(user)
                     else:
                         st.warning(error_message)
+
+                # Sign in the user if only email and password are provided
                 else:
                     success, error_message = auth_service.sign_in(user, auth_pyrebase, db)
                     if success:
@@ -90,10 +105,12 @@ def authenticate(auth_pyrebase, db):
                         st.warning(error_message)
 
 
+# Define layout columns for the main page
 left_column, middle_left, middle_right, right_column = st.columns([2, 1, 4, 4])
 
 
-def add_new_task(task_name, task_description, task_duration, date_ref, ref, current_date):
+# Function to process a new task
+def process_new_task(task_name, task_description, task_duration, date_ref, ref, current_date):
     new_task = Task(task_name, task_description, task_duration)
     task_service.add_task(new_task, date_ref, ref, current_date)
     new_task_df = pd.DataFrame({'Task': [new_task.task],
@@ -105,12 +122,13 @@ def add_new_task(task_name, task_description, task_duration, date_ref, ref, curr
     st.success(f"Task '{new_task.task}' added to your morning routine and realtime database!")
 
 
+# Function for the main page
 def main_page():
     user_id = st.session_state.get("user_id", None)
 
     if "user_id" is None:
         st.warning("Please sign in to view this page.")
-        return
+        return None
 
     if 'df' not in st.session_state:
         data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': []}
@@ -137,11 +155,13 @@ def main_page():
             })
             st.rerun()
 
+    # Get the current date and the reference to the tasks in the database
     current_date = datetime.now().strftime('%Y-%m-%d')
     ref = db.reference(f'users/{user_id}/tasks')
     date_ref = ref.child(current_date)
     tasks = date_ref.get()
 
+    # Check if there are tasks for the current date
     if tasks is None:
         data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': [], 'Key': [], 'Date': []}
         st.session_state.df = pd.DataFrame(data)
@@ -158,27 +178,33 @@ def main_page():
             })
         st.session_state.df = pd.DataFrame(task_list)
 
+    # Form to add new task
     with st.form(key='task_form'):
         task = st.text_input('Enter Task')
         description = st.text_input("Enter Description")
         duration = st.number_input("Estimated Time (min)", min_value=1)
         submit_button = st.form_submit_button(label='Add Task')
 
+    # If submit button is pressed, add task
     if submit_button:
         if task != '' and duration > 0:
-            add_new_task(task, description, duration, date_ref, ref, current_date)
+            process_new_task(task, description, duration, date_ref, ref, current_date)
+
+    # If "Add via Voice" button is pressed, add task via voice
     elif st.button("Add via Voice"):
         new_task_data = add_task_via_voice()
         if new_task_data is not None:
             task_name = new_task_data['Task']
             task_description = new_task_data['Description']
             task_duration = new_task_data['Estimated Time (min)']
-            add_new_task(task_name, task_description, task_duration, date_ref, ref, current_date)
+            process_new_task(task_name, task_description, task_duration, date_ref, ref, current_date)
 
     st.header("Your Morning Routine")
     if st.session_state.df.empty:
         st.info("No tasks added yet.")
     else:
+
+        # Display tasks by status
         for status, status_indicator in [('Completed', '✅'), ('In Progress', '🔄'), ('Not Started', '❌')]:
             st.subheader(f"{status} Tasks:")
             if f"show_{status}" not in st.session_state:
@@ -190,20 +216,23 @@ def main_page():
                     if pd.notna(st.session_state.df.loc[i, 'Task']) and st.session_state.df.loc[i, 'Status'] == status:
                         tasks_exist = True
                         task = Task(st.session_state.df.loc[i, 'Task'],
-                                            st.session_state.df.loc[i, 'Description'],
-                                            st.session_state.df.loc[i, 'Estimated Time (min)'],
-                                            status,
-                                            st.session_state.df.loc[i, 'Key'],
-                                            st.session_state.df.loc[i, 'Date']) 
+                                    st.session_state.df.loc[i, 'Description'],
+                                    st.session_state.df.loc[i, 'Estimated Time (min)'],
+                                    status,
+                                    st.session_state.df.loc[i, 'Key'],
+                                    st.session_state.df.loc[i, 'Date'])
                         with st.expander(f"{status_indicator} {task.task} {task.duration} minute(s)"):
                             st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
                             status_options = ['Not Started', 'In Progress', 'Completed']
                             new_status = st.selectbox('', status_options, key=f'status_{i}', index=status_options.index(status))
+
+                            # Change status of a task
                             if new_status != status:
                                 task_service.change_status(task, new_status, ref)
                                 st.session_state.df.loc[i, 'Status'] = new_status
                                 st.rerun()
 
+                            # Remove selected task
                             remove_button = st.button("Remove Task", key=f"remove_task_{i}")
                             if remove_button:
                                 task_service.remove_task(task, ref)
@@ -212,6 +241,7 @@ def main_page():
                 if not tasks_exist:
                     st.info("No active tasks in this section.")
 
+        # Calculate and display the total estimated time for incomplete tasks
         st.session_state.df['Estimated Time (min)'] = pd.to_numeric(st.session_state.df['Estimated Time (min)'], errors='coerce')
         total_time = st.session_state.df.loc[st.session_state.df['Status'] != 'Completed', 'Estimated Time (min)'].sum()
 
@@ -236,6 +266,7 @@ def main_page():
             st.rerun()
 
 
+# Function to show weather forecast in the sidebar
 def show_forecast():
 
     st.sidebar.title("Current Weather")
@@ -251,12 +282,14 @@ def show_forecast():
     temp_row[1].markdown(f"💨 {weather_data['wind']['speed']} m/s")
 
 
+# Function to show currency exchange rates in the sidebar
 def show_exchange_rate(base_currencies, target_currency):
     if "exchange_rates" not in st.session_state:
         st.session_state.exchange_rates = {}
 
     button_placeholder = st.sidebar.empty()
 
+    # Prevents multiple calls of API requests by checking if exchange rates are in the session state
     if not all(base_currency in st.session_state.exchange_rates for base_currency in base_currencies):
         button = button_placeholder.button("Check Currency Exchange")
 
@@ -278,6 +311,7 @@ def show_exchange_rate(base_currencies, target_currency):
                 st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
 
 
+# Function to list user tasks for a specific date
 def list_user_tasks():
     user_id = st.session_state["user_id"]
 
@@ -326,6 +360,7 @@ def list_user_tasks():
             st.dataframe(df, use_container_width=True)
 
 
+# Function to show user settings
 def show_user_settings():
     col1_settings, col2_settings = st.columns([2, 1])
 
@@ -374,6 +409,7 @@ def show_user_settings():
             st.error("Credentials too old, sign in again!")
 
 
+# Main Streamlit app function
 def app():
     if "authentication_status" not in st.session_state:
         st.session_state["authentication_status"] = False
@@ -397,5 +433,6 @@ def app():
     show_exchange_rate(['EUR', 'USD', 'CHF'], 'HUF')
 
 
+# Run the Streamlit app
 if __name__ == "__main__":
     app()
