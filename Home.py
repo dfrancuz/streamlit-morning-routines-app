@@ -187,13 +187,15 @@ def main_page():
 
     # If submit button is pressed, add task
     if submit_button:
-        if task != '' and duration > 0:
+        if task.strip() == '' or description.strip() == '':
+            st.warning("Please enter both Task Name and Description before adding the task.")
+        else:
             process_new_task(task, description, duration, date_ref, ref, current_date)
 
     # If "Add via Voice" button is pressed, add task via voice
-    elif st.button("Add via Voice"):
+    if st.button("Add via Voice"):
         new_task_data = add_task_via_voice()
-        if new_task_data is not None:
+        if new_task_data:
             task_name = new_task_data['Task']
             task_description = new_task_data['Description']
             task_duration = new_task_data['Estimated Time (min)']
@@ -209,35 +211,35 @@ def main_page():
             st.subheader(f"{status} Tasks:")
             if f"show_{status}" not in st.session_state:
                 st.session_state[f"show_{status}"] = True
+
+            # Filter the DataFrame based on the checkbox state
+            filtered_df = st.session_state.df[st.session_state.df['Status'] == status]
+
             show_status = st.checkbox(f"Show {status} Tasks", key=f"show_{status}")
             if show_status:
                 tasks_exist = False
-                for i in range(len(st.session_state.df)):
-                    if pd.notna(st.session_state.df.loc[i, 'Task']) and st.session_state.df.loc[i, 'Status'] == status:
-                        tasks_exist = True
-                        task = Task(st.session_state.df.loc[i, 'Task'],
-                                    st.session_state.df.loc[i, 'Description'],
-                                    st.session_state.df.loc[i, 'Estimated Time (min)'],
-                                    status,
-                                    st.session_state.df.loc[i, 'Key'],
-                                    st.session_state.df.loc[i, 'Date'])
-                        with st.expander(f"{status_indicator} {task.task} {task.duration} minute(s)"):
-                            st.markdown(f"**Description:** {st.session_state.df.loc[i, 'Description']}")
-                            status_options = ['Not Started', 'In Progress', 'Completed']
-                            new_status = st.selectbox('', status_options, key=f'status_{i}', index=status_options.index(status))
+                for i, task_row in filtered_df.iterrows():
+                    tasks_exist = True
+                    task = Task(task_row['Task'], task_row['Description'], task_row['Estimated Time (min)'],
+                                status, task_row['Key'], task_row['Date'])
+                    with st.expander(f"{status_indicator} {task.task} {task.duration} minute(s)"):
+                        st.markdown(f"**Description:** {task_row['Description']}")
+                        status_options = ['Not Started', 'In Progress', 'Completed']
+                        new_status = st.selectbox('', status_options, key=f'status_{i}', index=status_options.index(status))
 
-                            # Change status of a task
-                            if new_status != status:
-                                task_service.change_status(task, new_status, ref)
-                                st.session_state.df.loc[i, 'Status'] = new_status
-                                st.rerun()
+                        # Change status of a task
+                        if new_status != status:
+                            task_service.change_status(task, new_status, ref)
+                            st.session_state.df.loc[st.session_state.df['Key'] == task.key, 'Status'] = new_status
+                            st.rerun()
 
-                            # Remove selected task
-                            remove_button = st.button("Remove Task", key=f"remove_task_{i}")
-                            if remove_button:
-                                task_service.remove_task(task, ref)
-                                st.session_state.df.drop(index=i, inplace=True)
-                                st.rerun()
+                        # Remove selected task
+                        remove_button = st.button("Remove Task", key=f"remove_task_{i}")
+                        if remove_button:
+                            task_service.remove_task(task, ref)
+                            st.session_state.df = st.session_state.df[st.session_state.df['Key'] != task.key]
+                            st.rerun()
+
                 if not tasks_exist:
                     st.info("No active tasks in this section.")
 
