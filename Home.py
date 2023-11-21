@@ -226,8 +226,17 @@ def main_page():
                     tasks_exist = True
                     task = Task(task_row['Task'], task_row['Description'], task_row['Estimated Time (min)'],
                                 status, task_row['Key'], task_row['Date'])
-                    # Create an expander for each task with the task's name and duration
-                    with st.expander(f"{status_indicator} {task.task} {task.duration} minute(s)"):
+                    
+                    # Use the task key to store the state of the expander
+                    task_key = task_row['Key']
+                    if f"expander_{task_key}" not in st.session_state:
+                        st.session_state[f"expander_{task_key}"] = False
+
+                    # Create an expander for each task with the task's name and its duration
+                    expanded = st.session_state[f"expander_{task_key}"]
+                    with st.expander(f"{status_indicator} {task.task} {task.duration} minute(s)", expanded=expanded):
+                        if expanded != st.session_state[f"expander_{task_key}"]:
+                            st.session_state[f"expander_{task_key}"] = not expanded
                         st.markdown(f"**Description:** {task_row['Description']}")
                         status_options = ['Not Started', 'In Progress', 'Completed']
                         new_status = st.selectbox('', status_options, key=f'status_{i}', index=status_options.index(status))
@@ -243,6 +252,7 @@ def main_page():
                         if remove_button:
                             task_service.remove_task(task, ref)
                             st.session_state.df = st.session_state.df[st.session_state.df['Key'] != task.key]
+                            st.session_state[f"expander_{task_key}"] = False
                             st.rerun()
 
                 if not tasks_exist:
