@@ -207,6 +207,8 @@ def main_page():
     else:
         # Display tasks by status
         for status, status_indicator in [('Completed', '✅'), ('In Progress', '🔄'), ('Not Started', '❌')]:
+            if f"show_{status}" not in st.session_state:
+                st.session_state[f"show_{status}"] = True
             # Filter the DataFrame based on the checkbox state
             filtered_df = st.session_state.df[st.session_state.df['Status'] == status]
 
