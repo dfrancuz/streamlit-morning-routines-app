@@ -201,19 +201,21 @@ def main_page():
             task_duration = new_task_data['Estimated Time (min)']
             process_new_task(task_name, task_description, task_duration, date_ref, ref, current_date)
 
-    st.header("Your Morning Routine")
+    st.markdown("<h1 style='text-align: center; color: #31333F;'>Your Morning Routine</h1>", unsafe_allow_html=True)
     if st.session_state.df.empty:
         st.info("No tasks added yet.")
     else:
-
         # Display tasks by status
         for status, status_indicator in [('Completed', '✅'), ('In Progress', '🔄'), ('Not Started', '❌')]:
-            st.subheader(f"{status} Tasks:")
-            if f"show_{status}" not in st.session_state:
-                st.session_state[f"show_{status}"] = True
-
             # Filter the DataFrame based on the checkbox state
             filtered_df = st.session_state.df[st.session_state.df['Status'] == status]
+
+            # Calculate the number of tasks for the current status
+            num_tasks = len(filtered_df)
+
+            st.title(f"{status} Tasks: {num_tasks}")
+            if f"show_{status}" not in st.session_state:
+                st.session_state[f"show_{status}"] = True
 
             show_status = st.checkbox(f"Show {status} Tasks", key=f"show_{status}")
             if show_status:
@@ -222,12 +224,13 @@ def main_page():
                     tasks_exist = True
                     task = Task(task_row['Task'], task_row['Description'], task_row['Estimated Time (min)'],
                                 status, task_row['Key'], task_row['Date'])
+                    # Create an expander for each task with the task's name and duration
                     with st.expander(f"{status_indicator} {task.task} {task.duration} minute(s)"):
                         st.markdown(f"**Description:** {task_row['Description']}")
                         status_options = ['Not Started', 'In Progress', 'Completed']
                         new_status = st.selectbox('', status_options, key=f'status_{i}', index=status_options.index(status))
 
-                        # Change status of a task
+                        # Change status of selected task
                         if new_status != status:
                             task_service.change_status(task, new_status, ref)
                             st.session_state.df.loc[st.session_state.df['Key'] == task.key, 'Status'] = new_status
