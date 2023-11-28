@@ -1,4 +1,5 @@
 info.yml
-serviceAccountKey.json
 __pycache__/
 *.py[cod]
+serviceAccountKey.json
+.streamlit/secrets.toml

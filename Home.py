@@ -24,20 +24,33 @@ st.set_page_config(
 def initialize_firebase():
     try:
         # Load Firebase credentials and initialize Firebase Admin SDK
-        cred = credentials.Certificate('serviceAccountKey.json')
+        # cred = credentials.Certificate('serviceAccountKey.json')
+        cred = credentials.Certificate({
+            "type": "service_account",
+            "project_id": st.secrets["general"]["PROJECT_ID"],
+            "private_key_id": st.secrets["general"]["PRIVATE_KEY_ID"],
+            "private_key": st.secrets["general"]["PRIVATE_KEY"],
+            "client_email": st.secrets["general"]["CLIENT_EMAIL"],
+            "client_id": st.secrets["general"]["CLIENT_ID"],
+            "auth_uri": st.secrets["general"]["AUTH_URI"],
+            "token_uri": st.secrets["general"]["TOKEN_URI"],
+            "auth_provider_x509_cert_url": st.secrets["general"]["AUTH_PROVIDER_CERT_URL"],
+            "client_x509_cert_url": st.secrets["general"]["CLIENT_CERT_URL"],
+            'universe_domain': st.secrets["general"]["UNIVERSE_DOMAIN"]
+        })
         if not firebase_admin._apps:
             firebase_admin.initialize_app(cred, {
-                'databaseURL': os.environ.get('DATABASE_URL')
+                'databaseURL': st.secrets["general"]["DATABASE_URL"]
             })
         # Initialize Pyrebase with Firebase project configuration
         firebase_config = {
-                    'apiKey': os.environ.get('API_KEY'),
-                    'authDomain': os.environ.get('AUTH_DOMAIN'),
-                    'databaseURL': os.environ.get('BASE_URL'),
-                    'projectId': os.environ.get('PROJECT_ID'),
-                    'storageBucket': os.environ.get('STORAGE_BUCKET'),
-                    'messagingSenderId': os.environ.get('MESSAGING_SENDER_ID'),
-                    'appId': os.environ.get('APP_ID')
+                    'apiKey': st.secrets["general"]['API_KEY'],
+                    'authDomain': st.secrets["general"]['AUTH_DOMAIN'],
+                    'databaseURL': st.secrets["general"]['BASE_URL'],
+                    'projectId': st.secrets["general"]['PROJECT_ID'],
+                    'storageBucket': st.secrets["general"]['STORAGE_BUCKET'],
+                    'messagingSenderId': st.secrets["general"]['MESSAGING_SENDER_ID'],
+                    'appId': st.secrets["general"]['APP_ID']
         }
         firebase = pyrebase.initialize_app(firebase_config)
         auth_pyrebase = firebase.auth()
