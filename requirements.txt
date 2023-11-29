@@ -1,6 +1,6 @@
 firebase_admin==6.2.0
 pandas==2.1.3
-pyrebase==3.0.27
+pyrebase
 pyttsx3==2.90
-Requests==2.31.0
+Requests
 streamlit==1.26.0
