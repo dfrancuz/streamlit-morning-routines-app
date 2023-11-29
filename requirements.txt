@@ -1,6 +1,7 @@
 firebase_admin
 pandas
 pyrebase
+oauth2client
 pyttsx3
 Requests
 streamlit
