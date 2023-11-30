@@ -1,4 +1,3 @@
-import os
 import pyrebase
 import pandas as pd
 import firebase_admin
@@ -93,14 +92,13 @@ def authenticate(auth_pyrebase, db):
         with col2:
             username = st.text_input('Username')
             password = st.text_input('Password', type='password')
-
+        
         # Check if user has pressed the button
         if st.form_submit_button('Sign In / Sign Up'):
             if (email == '' or password == ''):
                 st.warning('Please enter your email and password.')
             else:
                 user = User(name, email, username, password)
-
                 # Sign up the user if all fields are filled
                 if username != '' and name != '':
                     success, error_message = auth_service.sign_up(user, auth_pyrebase, db)
@@ -108,7 +106,6 @@ def authenticate(auth_pyrebase, db):
                         set_session_state_variables(user)
                     else:
                         st.warning(error_message)
-
                 # Sign in the user if only email and password are provided
                 else:
                     success, error_message = auth_service.sign_in(user, auth_pyrebase, db)
@@ -139,10 +136,12 @@ def process_new_task(task_name, task_description, task_duration, date_ref, ref, 
 def main_page():
     user_id = st.session_state.get("user_id", None)
 
+    # Prevents access to the main page if the user is not signed in
     if "user_id" is None:
         st.warning("Please sign in to view this page.")
         return None
 
+    # Initialize DataFrame if it hasn't been initialized yet
     if 'df' not in st.session_state:
         data = {'Task': [], 'Description': [], 'Estimated Time (min)': [], 'Status': []}
         st.session_state.df = pd.DataFrame(data)
@@ -214,6 +213,7 @@ def main_page():
             task_duration = new_task_data['Estimated Time (min)']
             process_new_task(task_name, task_description, task_duration, date_ref, ref, current_date)
 
+    # Display section for Morning Routine tasks
     st.markdown("<h1 style='text-align: center; color: #31333F;'>Your Morning Routine</h1>", unsafe_allow_html=True)
     if st.session_state.df.empty:
         st.info("No tasks added yet.")
@@ -326,14 +326,18 @@ def show_exchange_rate(base_currencies, target_currency):
         if button:
             button_placeholder.empty()
 
+            # Display exchange rates in an expander in sidebar
             with st.sidebar.expander("Exchange Rates"):
                 for base_currency in base_currencies:
                     rate = get_exchange_rate(base_currency, target_currency)
+
+                    # If API call was successful, store retreived exchange rate and display it
                     if rate is not None:
                         formatted_rate = format(rate, '.2f')
                         st.session_state.exchange_rates[base_currency] = rate
                         st.write(f'**{base_currency}** to **{target_currency}**: {formatted_rate}')
     else:
+        # If exchange rates are already in session state, display them
         with st.sidebar.expander("Exchange Rates"):
             for base_currency in base_currencies:
                 rate = st.session_state.exchange_rates[base_currency]
@@ -349,6 +353,7 @@ def list_user_tasks():
 
     with col3:
         if 'loggedin' in st.session_state and st.session_state['loggedin']:
+            # If 'Back' button is pressed, go back to the main page
             if st.button('Back'):
                 st.session_state.view = 'main_page'
                 st.rerun()
@@ -363,6 +368,7 @@ def list_user_tasks():
         st.write('')
         show_tasks_button = st.button('Show tasks')
 
+    # Check if there are tasks for selected date
     if show_tasks_button:
         ref = db.reference(f'users/{user_id}/tasks/{selected_date.strftime("%Y-%m-%d")}')
         tasks = ref.get()
@@ -380,6 +386,7 @@ def list_user_tasks():
                 })
             df = pd.DataFrame(task_list)
 
+            # Map the status of the task to icons
             status_icons = {
                 'Completed': '✅',
                 'In Progress': '🔄',
@@ -396,6 +403,7 @@ def show_user_settings():
 
     with col1_settings:
         if 'loggedin' in st.session_state and st.session_state['loggedin']:
+            # If 'Back' button is pressed, go back to the main page
             if st.button('Back'):
                 st.session_state.view = 'main_page'
                 st.rerun()
@@ -407,6 +415,7 @@ def show_user_settings():
                         st.session_state["user_id"],
                         st.session_state["refresh_token"])
 
+    # Allow user to change their password
     st.subheader("Change Password")
     new_password = st.text_input("New Password", type="password")
     confirm_password = st.text_input("Confirm Password", type="password")
@@ -419,6 +428,7 @@ def show_user_settings():
             refresh_token, id_token = user_service.change_password(current_user,
                                                                    new_password,
                                                                    auth_pyrebase)
+            # In case of successful password change, update the session state
             if refresh_token and id_token:
                 st.session_state["refresh_token"] = refresh_token
                 st.session_state["id_token"] = id_token
@@ -426,11 +436,13 @@ def show_user_settings():
             else:
                 st.error("Credentials too old, sign in again!")
 
+    # Allow user to delete their account
     st.subheader("Delete Account")
     confirmation = st.text_input("Type 'DELETE' to confirm", type="password")
     if confirmation == "DELETE" and st.button("Delete Account"):
         if user_service.delete_account(current_user, db):
             st.success("Account deleted successfully.")
+            # In case of successful account deletion, clear the session state
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             st.session_state.view = 'sign_in_page'
@@ -441,9 +453,11 @@ def show_user_settings():
 
 # Main Streamlit app function
 def app():
+    # Check if the user is authenticated
     if "authentication_status" not in st.session_state:
         st.session_state["authentication_status"] = False
 
+    # If the user is not authenticated, authenticate them
     if not st.session_state["authentication_status"]:
         authenticate(auth_pyrebase, db)
     elif "view" in st.session_state and st.session_state["view"] == 'other_dates':
