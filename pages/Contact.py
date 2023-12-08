@@ -16,7 +16,7 @@ def local_css(file_name):
 local_css("style/style_contact.css")
 
 st.title('Contact Form')
-
+# Used for sending email inquires
 formsubmit_url = os.environ.get("FORMSUBMIT_URL")
 
 contact_form = f"""

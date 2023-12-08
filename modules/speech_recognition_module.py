@@ -14,12 +14,14 @@ def _transcribe_speech(prompt=None):
     r = sr.Recognizer()
     is_recording = False
 
+    # Create a microphone instance
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source)
         if prompt:
             st.write(prompt)
 
         audio = None
+        # Listen for an audio
         while True:
             try:
                 with st.spinner("Listening..."):
@@ -29,6 +31,7 @@ def _transcribe_speech(prompt=None):
                 if not is_recording:
                     is_recording = True
     try:
+        # Use Google Speech Recognition to transcribe the audio to text
         text = r.recognize_google(audio)
         return text
     except sr.UnknownValueError:
@@ -47,11 +50,9 @@ def add_task_via_voice():
     for i, question in enumerate(questions):
         _speak(question)
         response = _transcribe_speech()
-
         # Process the response based on the question index
         if response:
             if i == 1:
-
                 # Extract numeric duration from this response
                 match = re.search(r'\d+', response)
                 if match:

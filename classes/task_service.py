@@ -9,7 +9,6 @@ class TaskService:
             'estimated_time': task.duration,
             'status': task.status
         }
-
         if date_ref.get() is None:
             date_ref.push(new_task)
         else:

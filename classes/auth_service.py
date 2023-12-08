@@ -11,7 +11,6 @@ class AuthService:
             user.name = db_user_data['name']
             return True, ""
         except Exception as e:
-
             # Handle multiple sign-in related exceptions and provide a user-friendly output error message
             error_message = str(e)
             if "INVALID_LOGIN_CREDENTIALS" in error_message:
@@ -33,7 +32,6 @@ class AuthService:
             user.refresh_token = user_data['refreshToken']
             return True, ""
         except Exception as e:
-
             # Handle multiple sign-up related exceptions and provide a user-friendly output error message
             error_message = str(e)
             if "EMAIL_EXISTS" in error_message:
