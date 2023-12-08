@@ -12,22 +12,22 @@ Make your mornings productive and enjoyable with this all-in-one app. Try it you
 
 ## Instalation Guide
 Follow these steps to install and run Morning Routines Application on your local machine:
-1. **Clone the Repository**
+1. ***Clone the Repository***
    - First, you need to clone the project to your local machine. You can do this by running the following command in your terminal: `git clone https://github.com/dfrancuz/streamlit-morning-routines-app.git`
    - Navigate into the project directory: `cd streamlit-morning-routines-app`
 
-2. **Setup (Optional)**
+2. ***Setup (Optional)***
    - It's recommended to use a virtual environment to keep the dependencies used by this project separate from your other Python projects.
    - If you're using [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/), you can create a new environment with the following command: `conda create --name myenv`
    - Activate the environment using: `conda activate myenv`
 
-3. **Prerequisites**
+3. ***Prerequisites***
    - Ensure you have the following [prerequisites](https://github.com/dfrancuz/streamlit-morning-routines-app/blob/main/requirements.txt) installed in your python environment.
    - If not, in your Command Prompt or terminal, navigate to the project directory and type the following command: `pip install -r requirements.txt`
 
-4. **Setup API Keys and Firebase**
+4. ***Setup API Keys and Firebase***
    - This application uses [Firebase](https://firebase.google.com/) for data storage and APIs for [weather](https://openweathermap.org/) updates and [currency](https://app.currencyapi.com/login) exchange. You need to set up your own API keys and Firebase credentials before running the application. For more information on how to set up and connect Firebase with your Streamlit app, please visit this [link](https://firebase.google.com/docs/auth/admin).
-   - Create a `serviceAccountKey.json` file with your Firebase service account key and place it in the root directory of the project.
+   - Create a `serviceAccountKey.json` file with your Firebase service account key and place it in the root directory of the project. The application will read this file to authenticate with Firebase.
    - Set up the following environment variables with your own values:
      
       | Environment Variable |<div align="center"> Description </div> |
@@ -45,7 +45,12 @@ Follow these steps to install and run Morning Routines Application on your local
       | `WEATHER_API_KEY` | Your API key for the weather service. |
       | `WEATHER_BASE_URL` | The base URL of the weather service. |
 
-5. **Run the Application**
+5. ***Setup Contact Form (Optional)***
+   - This application uses [FormSubmit](https://formsubmit.co/) for the contact form. If you want to use this feature, you need to set up your own FormSubmit endpoint.
+   - Enter your email address and follow the steps given on the [page](https://formsubmit.co/email-link).
+
+## Run the Application
    - After setting up your API keys and Firebase credentials, you can run the application by executing the following command in your terminal: `streamlit run Home.py`
-   - Once the application is running, you should see a display similar to [this](https://i.imgur.com/mB7rNVv.png).
-  
+   - Once the application is up and running, you should see a display similar to [this](https://i.imgur.com/mB7rNVv.png).
+   - Feel free to explore its features and make the most out of your morning routines. You can customize the application according to your needs.
+
