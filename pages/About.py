@@ -12,9 +12,9 @@ def local_css(file_name):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
-st.title('About')
-
 local_css("style/style_about.css")
+
+st.title('About')
 
 st.markdown("""
 <div id="about">

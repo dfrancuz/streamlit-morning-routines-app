@@ -3,7 +3,6 @@ import requests
 
 # Class for managing user-related operations
 class UserService:
-
     # Method to change the password of a user
     def change_password(self, user, new_password, auth_pyrebase):
         try:

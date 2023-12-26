@@ -1,6 +1,5 @@
 # Class for managing user Authentication operations
 class AuthService:
-
     # Method to sign in a user
     def sign_in(self, user, auth_pyrebase, db):
         try:

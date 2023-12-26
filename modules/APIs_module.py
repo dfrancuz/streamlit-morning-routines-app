@@ -21,6 +21,7 @@ def get_exchange_rate(base_currency, target_currency):
     response = requests.get(complete_url)
     data = response.json()
 
+    # If request is successful retrieve data
     if response.status_code == 200:
         if 'data' in data and target_currency in data['data']:
             exchange_rate = data['data'][target_currency]['value']

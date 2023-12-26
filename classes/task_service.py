@@ -1,6 +1,5 @@
 # Class for managing Task operations in a database
 class TaskService:
-
     # Method to add a task to the database 
     def add_task(self, task, date_ref, ref, current_date):
         new_task = {
