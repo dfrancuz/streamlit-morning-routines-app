@@ -1,4 +1,26 @@
-# Morning Routines Application using Streamlit
+<div align="center">
+
+   # Morning Routines Application using Streamlit
+
+</div>
+
+### Table of Contents
+1. [Project Overview](#project-overview)
+2. [Installation Guide](#installation-guide)
+3. [Running Application](#running-application)
+4. [Demo Video](#demo-video)
+
+<div id="demo-video" align="center">
+
+#### 📽️ [Application Demo Video](https://youtu.be/HKLrqLuuYB8?si=gDRd0qZ-qLZzlyRL)
+
+</div>
+
+<div id="project-overview">
+   
+   ## Project Overview
+   
+</div>
 
 Jumpstart your day with ease! The Morning Routines Application is your personal morning assistant, offering task management, AI-powered interaction, weather updates, currency exchange rates, and more. Organize your daily routine, set tasks, and receive weather updates, all in one convenient tool.
 
@@ -10,7 +32,12 @@ Jumpstart your day with ease! The Morning Routines Application is your personal 
 
 Make your mornings productive and enjoyable with this all-in-one app. Try it yourself!
 
-## Instalation Guide
+<div id="installation-guide">
+
+   ## Installation Guide
+
+</div>
+
 Follow these steps to install and run Morning Routines Application on your local machine:
 1. ***Clone the Repository***
    - First, you need to clone the project to your local machine. You can do this by running the following command in your terminal: `git clone https://github.com/dfrancuz/streamlit-morning-routines-app.git`
@@ -49,7 +76,12 @@ Follow these steps to install and run Morning Routines Application on your local
    - This application uses [FormSubmit](https://formsubmit.co/) for the contact form. If you want to use this feature, you need to set up your own FormSubmit endpoint.
    - Enter your email address and follow the steps given on the [page](https://formsubmit.co/email-link).
 
-## Run the Application
+<div id="running-application">
+
+   ## Run the Application
+
+</div>
+
    - After setting up your API keys and Firebase credentials, you can run the application by executing the following command in your terminal: `streamlit run Home.py`
    - Once the application is up and running, you should see a display similar to [this](https://i.imgur.com/mB7rNVv.png).
    - Feel free to explore its features and make the most out of your morning routines. You can customize the application according to your needs.
